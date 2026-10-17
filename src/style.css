@@ -1,0 +1,365 @@
+/* ==========================================================================
+   ApexGrid — "F1 Telemetry HUD & Night-Run Carbon" Design System
+   Typography: Space Grotesk (Display), Inter (UI), JetBrains Mono (Telemetry)
+   ========================================================================== */
+
+:root,
+[data-bs-theme="dark"] {
+  --apex-bg-primary: #090b10;
+  --apex-bg-surface: #11151f;
+  --apex-bg-elevated: #171c29;
+  --apex-bg-glass: rgba(17, 21, 31, 0.82);
+  --apex-border: rgba(255, 255, 255, 0.09);
+  --apex-border-strong: rgba(255, 255, 255, 0.16);
+  --apex-red: #ff2a4b;
+  --apex-red-hover: #e01b3b;
+  --apex-red-glow: rgba(255, 42, 75, 0.28);
+  --apex-amber: #ff9f1c;
+  --apex-cyan: #00f5d4;
+  --apex-text-primary: #f8fafc;
+  --apex-text-muted: #94a3b8;
+  --apex-card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --apex-card-hover-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.75), 0 0 24px -4px rgba(255, 42, 75, 0.22);
+  --apex-hero-gradient: radial-gradient(circle at 82% 22%, rgba(255, 42, 75, 0.24) 0%, transparent 48%),
+    linear-gradient(135deg, rgba(9, 11, 16, 0.96) 0%, rgba(17, 21, 31, 0.88) 60%, rgba(23, 28, 41, 0.92) 100%);
+}
+
+[data-bs-theme="light"] {
+  --apex-bg-primary: #f1f5f9;
+  --apex-bg-surface: #ffffff;
+  --apex-bg-elevated: #f8fafc;
+  --apex-bg-glass: rgba(255, 255, 255, 0.88);
+  --apex-border: rgba(15, 23, 42, 0.1);
+  --apex-border-strong: rgba(15, 23, 42, 0.18);
+  --apex-red: #dc2626;
+  --apex-red-hover: #b91c1c;
+  --apex-red-glow: rgba(220, 38, 38, 0.18);
+  --apex-amber: #d97706;
+  --apex-cyan: #0891b2;
+  --apex-text-primary: #0f172a;
+  --apex-text-muted: #475569;
+  --apex-card-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --apex-card-hover-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(220, 38, 38, 0.35);
+  --apex-hero-gradient: radial-gradient(circle at 80% 20%, rgba(220, 38, 38, 0.25) 0%, transparent 50%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
+}
+
+body {
+  background-color: var(--apex-bg-primary);
+  color: var(--apex-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4, h5, h6,
+.font-display {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.font-mono,
+code,
+.telemetry-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Glassmorphic Sticky Header */
+.apex-navbar-glass {
+  background-color: var(--apex-bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--apex-border);
+}
+
+/* Racing Kerb Accent Strip */
+.apex-kerb-strip {
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--apex-red) 0px,
+    var(--apex-red) 28px,
+    #ffffff 28px,
+    #ffffff 42px,
+    var(--apex-amber) 42px,
+    var(--apex-amber) 70px,
+    transparent 70px,
+    transparent 84px
+  );
+}
+
+/* Motorsport Carbon Surfaces & Cards */
+.apex-card {
+  background-color: var(--apex-bg-surface);
+  border: 1px solid var(--apex-border);
+  border-radius: 1rem;
+  box-shadow: var(--apex-card-shadow);
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s ease;
+}
+
+.apex-card-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 42, 75, 0.5);
+  box-shadow: var(--apex-card-hover-shadow);
+}
+
+.apex-card-hover:hover .apex-card-img-zoom {
+  transform: scale(1.05);
+}
+
+.apex-card-img-zoom {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hero Section with Carbon Grid Pattern Overlay */
+.apex-hero {
+  position: relative;
+  background-image: var(--apex-hero-gradient),
+    url('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=1600&auto=format&fit=crop&q=80');
+  background-size: cover;
+  background-position: center;
+  border-bottom: 1px solid var(--apex-border-strong);
+  overflow: hidden;
+}
+
+.apex-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+}
+
+/* Live Pulsing Telemetry Dot */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: apexPulse 2s infinite;
+  --animation-reduced: none;
+}
+
+@keyframes apexPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.apex-badge-accent {
+  background-color: rgba(255, 42, 75, 0.15);
+  color: #ff6b81;
+  border: 1px solid rgba(255, 42, 75, 0.38);
+  font-weight: 600;
+}
+
+[data-bs-theme="light"] .apex-badge-accent {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.btn-apex {
+  background: linear-gradient(135deg, var(--apex-red) 0%, var(--apex-red-hover) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 14px var(--apex-red-glow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.btn-apex:hover,
+.btn-apex:focus-visible {
+  color: #ffffff;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--apex-red-glow);
+}
+
+/* Ticket Date Badge on Event Cards */
+.apex-date-ticket {
+  min-width: 54px;
+  text-align: center;
+  border-radius: 0.65rem;
+  background: rgba(9, 11, 16, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.apex-date-ticket-month {
+  background: var(--apex-red);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+}
+
+.apex-date-ticket-day {
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 2px 6px;
+}
+
+/* Shimmer Skeleton Loader */
+.apex-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--apex-bg-elevated) 25%,
+    rgba(255, 255, 255, 0.07) 50%,
+    var(--apex-bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: apexShimmer 1.5s infinite linear;
+  --animation-reduced: none;
+  border-radius: 0.5rem;
+}
+
+@keyframes apexShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Route View Transition (Compositor-friendly opacity + translate) */
+.apex-page-enter-active,
+.apex-page-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.apex-page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.apex-page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Modern Web Guidance: Respect prefers-reduced-motion */
+@property --animation-reduced {
+  syntax: "*";
+  inherits: false;
+  initial-value: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: var(--animation-reduced) !important;
+  }
+  .apex-page-enter-active,
+  .apex-page-leave-active,
+  .apex-card,
+  .apex-card-img-zoom {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* Modern Web Guidance: Post-interaction form validation (:user-invalid & :user-valid) */
+.field-hint {
+  display: block;
+  color: var(--apex-text-muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.error-msg {
+  display: none;
+  color: var(--apex-red);
+  font-size: 0.84rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid,
+input.user-invalid-fallback,
+select.user-invalid-fallback,
+textarea.user-invalid-fallback {
+  border-color: var(--apex-red) !important;
+  background-color: rgba(255, 42, 75, 0.07);
+}
+
+input:user-invalid + .error-msg,
+select:user-invalid + .error-msg,
+textarea:user-invalid + .error-msg,
+input.user-invalid-fallback + .error-msg,
+select.user-invalid-fallback + .error-msg,
+textarea.user-invalid-fallback + .error-msg {
+  display: block;
+}
+
+input:user-valid,
+select:user-valid,
+textarea:user-valid,
+input.user-valid-fallback,
+select.user-valid-fallback,
+textarea.user-valid-fallback {
+  border-color: #10b981;
+}
+
+.apex-field:has(input:user-invalid) .rules-list {
+  color: var(--apex-red);
+  font-weight: 600;
+}
+
+.apex-field:has(input:user-valid) .rules-list {
+  color: #10b981;
+}
+
+/* Mobile PWA Bottom Navigation Bar Clearance */
+@media (max-width: 991.98px) {
+  body {
+    padding-bottom: 68px;
+  }
+}
+
+/* Leaflet map container sizing */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 1;
+}
+
+/* Keyboard focus ring for WCAG 2.1 AA */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--apex-amber);
+  outline-offset: 2px;
+}

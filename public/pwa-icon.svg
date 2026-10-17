@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ApexGrid PWA Icon">
+  <rect width="512" height="512" rx="96" fill="#111318"/>
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="none" stroke="#e63946" stroke-width="10" stroke-opacity="0.4"/>
+  <path d="M96 376 L208 112 L284 112 L172 376 Z" fill="#e63946"/>
+  <path d="M248 376 L326 192 L416 192 L338 376 Z" fill="#f4a261"/>
+  <circle cx="384" cy="132" r="32" fill="#e63946"/>
+</svg>

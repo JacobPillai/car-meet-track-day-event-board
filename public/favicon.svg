@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="ApexGrid Logo">
+  <rect width="120" height="120" rx="24" fill="#111318"/>
+  <path d="M22 86 L48 26 L66 26 L40 86 Z" fill="#e63946"/>
+  <path d="M58 86 L76 44 L98 44 L80 86 Z" fill="#f4a261"/>
+  <circle cx="90" cy="30" r="8" fill="#e63946"/>
+</svg>
