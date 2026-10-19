@@ -64,6 +64,7 @@ function handleResetSeedData() {
             <li><router-link to="/events" class="text-decoration-none text-body-secondary">Browse All Events</router-link></li>
             <li><router-link to="/explore" class="text-decoration-none text-body-secondary">Interactive Map &amp; Calendar</router-link></li>
             <li><router-link to="/clubs" class="text-decoration-none text-body-secondary">Verified Car Clubs (6)</router-link></li>
+            <li><router-link to="/about" class="text-decoration-none text-body-secondary">About &amp; Phase 2 Roadmap</router-link></li>
           </ul>
         </div>
 

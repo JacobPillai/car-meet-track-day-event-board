@@ -104,6 +104,11 @@ onUnmounted(() => {
                 <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Clubs
               </router-link>
             </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/about" active-class="active fw-semibold">
+                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>About
+              </router-link>
+            </li>
 
             <!-- Member / Authenticated Portal Link -->
             <li v-if="authStore.isAuthenticated" class="nav-item">

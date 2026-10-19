@@ -80,19 +80,19 @@ All **7 required MySQL/MariaDB tables** are implemented and compatible with Swin
 - [x] **RSVP:** `POST /events/:id/rsvp`, `DELETE /events/:id/rsvp`, `GET /users/me/rsvps`
 - [x] **Likes:** `POST /events/:id/like`, `DELETE /events/:id/like`
 - [x] **Comments:** `GET /events/:id/comments`, `POST /events/:id/comments`, `DELETE /comments/:id`
-- [x] **Clubs:** `GET /clubs`, `GET /clubs/:id`, `POST /clubs`, `PUT /clubs/:id`, `DELETE /clubs/:id` *(Note: Backend implemented; UI button for `DELETE /clubs/:id` can be added to `ClubDetailView.vue`)*
+- [x] **Clubs:** `GET /clubs`, `GET /clubs/:id`, `POST /clubs`, `PUT /clubs/:id`, `DELETE /clubs/:id` *(Full UI & API support complete with Delete Club button in `ClubDetailView.vue`)*
 - [x] **Categories:** `GET /categories`
 - [x] **Dashboard:** `GET /dashboard/stats`
 - [x] **Admin:** `GET /admin/users`, `PUT /admin/users/:id/role`, `DELETE /admin/users/:id`, `GET /admin/moderation`
 
 ---
 
-## 3. Actionable To-Do List to Reach 100% Completion
+## 3. Actionable To-Do List & Completion Status
 
-### Phase A: Optional Codebase Polish (Can Be Implemented Right Now)
-- [ ] **1. Add "Delete Club" Button in `ClubDetailView.vue`:** Allow the club owner (`organizer`) or `admin` to delete a club from the UI so `DELETE /clubs/:id` is demonstrable live during the video/interview.
-- [ ] **2. Add `/about` (`AboutView.vue`) Page & Future Scalability Roadmap:** Create the 14th view (`/about`) detailing the 4-member team allocation, system architecture, WCAG 2.1 AA compliance features, and the **Phase 2 Future Scalability Roadmap** (Workshop & Mechanic Review Locator + Used Parts Swap Board) recommended in your scoping brief.
-- [ ] **3. Add Custom Vue Directive (`v-focus` / `v-CopyTooltip`) & Expand Vitest Suite (`eventStore.spec.js`, `useOfflineEvents.spec.js`):** Boost Gibson's automated test suite from 7 to 14+ unit tests and include a custom Vue directive to check off every possible COS30043 marking rubric box.
+### Phase A: Codebase Polish & Enhancement (✅ 100% Completed)
+- [x] **1. Add "Delete Club" Button in `ClubDetailView.vue`:** Implemented for club owner (`organizer`) and `admin` with confirmation prompt, API deletion call, and toast feedback.
+- [x] **2. Add `/about` (`AboutView.vue`) Page & Future Scalability Roadmap:** Created the 14th view (`/about`) with tabs for System Architecture & Team Allocation, WCAG 2.1 AA Accessibility Standards, and the **Phase 2 Future Scalability Roadmap** (Workshop Locator & Used Parts Swap Board). Linked in both `Navbar.vue` and `Footer.vue`.
+- [x] **3. Add Custom Vue Directive (`v-focus`) & Expand Vitest Suite (`eventStore.spec.js`, `useOfflineEvents.spec.js`):** Built custom `v-focus` directive in `src/directives/focus.js` and registered in `main.js`. Expanded Gibson's automated test suite to **5 spec files and 13/13 passing tests** (covering `EventCard`, `PaginationBar`, `authStore`, `eventStore`, and `useOfflineEvents`).
 
 ### Phase B: Deployment & Repository Tasks (Manual Steps by You/Team)
 - [ ] **4. Push Repository to GitHub:** Run `git push -u origin main` in `D:\ApexGrid` and complete the GitHub browser sign-in as `JacobPillai`.

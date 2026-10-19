@@ -3,11 +3,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
+import { useToast } from '../composables/useToast'
 import EventCard from '../components/EventCard.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { showToast } = useToast()
 
 const club = ref(null)
 const loading = ref(true)
@@ -42,7 +44,23 @@ async function loadClubDetail() {
 async function saveClubEdits() {
   await api.put(`/clubs/${club.value.id}`, editForm.value)
   isEditing.value = false
+  showToast(`Updated profile for ${club.value.name}`, 'success')
   await loadClubDetail()
+}
+
+async function deleteClub() {
+  if (
+    typeof window !== 'undefined' &&
+    window.confirm(`Are you sure you want to delete "${club.value.name}"? This action cannot be undone.`)
+  ) {
+    try {
+      await api.delete(`/clubs/${club.value.id}`)
+      showToast(`Club "${club.value.name}" has been deleted.`, 'warning')
+      router.push('/clubs')
+    } catch (err) {
+      showToast(err.message || 'Failed to delete club.', 'danger')
+    }
+  }
 }
 
 async function handleToggleLike(ev) {
@@ -119,6 +137,14 @@ onMounted(() => {
             <router-link to="/events/new" class="btn btn-sm btn-apex">
               <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Host Club Event
             </router-link>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              title="Delete this club and dissociate its events"
+              @click="deleteClub"
+            >
+              <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete Club
+            </button>
           </div>
         </div>
 

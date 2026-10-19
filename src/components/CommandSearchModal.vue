@@ -99,6 +99,7 @@ onUnmounted(() => {
         <input
           ref="inputRef"
           v-model="query"
+          v-focus
           type="search"
           class="form-control border-0 bg-transparent shadow-none"
           placeholder="Jump to any circuit, track day, club, or region (Sandown, Sepang, Kuching...)"

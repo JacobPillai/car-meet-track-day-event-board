@@ -4,7 +4,7 @@
  * and organizer contact) when driving to remote track venues with poor reception.
  */
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 
 const OFFLINE_EVENTS_KEY = 'apexgrid_offline_saved_events_v1'
 
@@ -43,17 +43,19 @@ export function useOfflineEvents() {
     deferredInstallPrompt.value = e
   }
 
-  onMounted(() => {
-    window.addEventListener('online', updateOnlineStatus)
-    window.addEventListener('offline', updateOnlineStatus)
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-  })
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      window.addEventListener('online', updateOnlineStatus)
+      window.addEventListener('offline', updateOnlineStatus)
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    })
 
-  onUnmounted(() => {
-    window.removeEventListener('online', updateOnlineStatus)
-    window.removeEventListener('offline', updateOnlineStatus)
-    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-  })
+    onUnmounted(() => {
+      window.removeEventListener('online', updateOnlineStatus)
+      window.removeEventListener('offline', updateOnlineStatus)
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    })
+  }
 
   const isOnline = computed(() => browserOnline.value)
 

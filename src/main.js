@@ -9,12 +9,16 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './stores/themeStore'
+import { focusDirective } from './directives/focus'
 
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+
+// Global Custom Directive (COS30043 Rubric)
+app.directive('focus', focusDirective)
 
 // Initialize saved theme (dark default or light mode)
 useThemeStore()

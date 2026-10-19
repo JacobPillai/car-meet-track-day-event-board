@@ -19,6 +19,7 @@ import MyEventsView from '../views/MyEventsView.vue'
 import EventFormView from '../views/EventFormView.vue'
 import OrganizerDashboardView from '../views/OrganizerDashboardView.vue'
 import AdminPanelView from '../views/AdminPanelView.vue'
+import AboutView from '../views/AboutView.vue'
 
 export const routes = [
   {
@@ -122,6 +123,15 @@ export const routes = [
       title: 'Platform Moderation & Role Control — Admin Portal',
       requiresAuth: true,
       roles: ['admin']
+    }
+  },
+  {
+    path: '/about',
+    name: 'about',
+    component: AboutView,
+    meta: {
+      title: 'About ApexGrid & Phase 2 Scalability — COS30043',
+      access: 'public'
     }
   },
   {
