@@ -15,6 +15,8 @@ const { showToast } = useToast()
 
 const userLocation = ref(null)
 const geoStatus = ref('')
+const categoriesError = ref(false)
+const pendingLikes = ref(new Set())
 
 async function applyFilters(resetPage = true) {
   if (resetPage) {
@@ -25,7 +27,20 @@ async function applyFilters(resetPage = true) {
     extra.lat = userLocation.value.lat
     extra.lng = userLocation.value.lng
   }
-  await eventStore.fetchEvents(extra)
+  try {
+    await eventStore.fetchEvents(extra)
+  } catch {
+    // The store exposes the error for the retry state below.
+  }
+}
+
+async function loadCategories() {
+  categoriesError.value = false
+  try {
+    await eventStore.fetchCategories()
+  } catch {
+    categoriesError.value = true
+  }
 }
 
 function handlePageChange(newPage) {
@@ -47,16 +62,16 @@ function useBrowserGeolocation() {
     showToast(geoStatus.value, 'warning')
     return
   }
-  geoStatus.value = 'Acquiring GPS coordinates...'
+  geoStatus.value = 'Finding your location…'
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       userLocation.value = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude
       }
-      geoStatus.value = `GPS locked (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`
+      geoStatus.value = 'Distances are measured from your current location.'
       eventStore.filters.sort = 'distance'
-      showToast(`Sorted by Haversine distance from ${geoStatus.value}`, 'success')
+      showToast('Events sorted by distance from your location.', 'success')
       applyFilters(true)
     },
     () => {
@@ -65,7 +80,7 @@ function useBrowserGeolocation() {
       userLocation.value = isMy
         ? { lat: 2.7608, lng: 101.7383 }
         : { lat: -37.8136, lng: 144.9631 }
-      geoStatus.value = `Using ${isMy ? 'Sepang MY' : 'Melbourne AU'} hub coordinates`
+      geoStatus.value = `Location unavailable. Distances are measured from ${isMy ? 'Sepang, Malaysia' : 'Melbourne, Australia'}, not your location.`
       eventStore.filters.sort = 'distance'
       showToast(`Sorted by distance from ${isMy ? 'Sepang MY' : 'Melbourne AU'} hub.`, 'info')
       applyFilters(true)
@@ -79,63 +94,70 @@ async function handleToggleLike(event) {
     router.push({ path: '/login', query: { redirect: `/events/${event.id}` } })
     return
   }
-  await eventStore.toggleLike(event.id, event.user_liked)
-  showToast(
-    event.user_liked ? `Removed like from "${event.title}"` : `Liked "${event.title}"!`,
-    'success'
-  )
-  await applyFilters(false)
+  if (pendingLikes.value.has(event.id)) return
+  pendingLikes.value.add(event.id)
+  const wasLiked = Boolean(event.user_liked)
+  try {
+    await eventStore.toggleLike(event.id, wasLiked)
+    showToast(wasLiked ? `Removed like from "${event.title}"` : `Liked "${event.title}"!`, 'success')
+    await applyFilters(false)
+  } catch (err) {
+    showToast(err.message || 'Unable to update your like. Please try again.', 'danger')
+  } finally {
+    pendingLikes.value.delete(event.id)
+  }
 }
 
-onMounted(async () => {
-  await eventStore.fetchCategories()
-  await applyFilters(false)
+onMounted(() => {
+  loadCategories()
+  applyFilters(false)
 })
 </script>
 
 <template>
-  <div class="container py-4">
-    <!-- Page Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+  <div class="events-page">
+    <div class="container">
+    <header class="events-heading">
       <div>
-        <h1 class="h3 fw-bold mb-1">
-          <i class="bi bi-flag-fill text-danger me-2" aria-hidden="true"></i>
-          Car Meet &amp; Track-Day Event Board
-        </h1>
-        <p class="text-body-secondary small mb-0">
-          Search, filter, and sort upcoming and completed motorsport events across Australia and Malaysia
+        <p class="events-eyebrow">Australia &amp; Malaysia · The community calendar</p>
+        <h1>Find your next<br /><span>good weekend.</span></h1>
+        <p class="events-heading__intro">
+          Coffee meets, coastal cruises, shows and track days. Find your scene, at your pace.
         </p>
       </div>
 
-      <div class="d-flex gap-2">
-        <router-link to="/explore" class="btn btn-sm btn-outline-secondary">
-          <i class="bi bi-geo-alt me-1 text-danger" aria-hidden="true"></i>Map &amp; Calendar View
+      <div class="events-heading__actions">
+        <router-link to="/explore" class="events-button">
+          <i class="bi bi-map" aria-hidden="true"></i>Map &amp; calendar
         </router-link>
         <router-link
           v-if="authStore.isOrganizer"
           to="/events/new"
-          class="btn btn-sm btn-apex"
+          class="events-button events-button--accent"
         >
-          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Host Event
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>Host an event
         </router-link>
       </div>
-    </div>
+    </header>
 
-    <!-- Search, Filter & Sort Toolbar -->
-    <section class="apex-card p-3 mb-4" aria-label="Search and filter controls">
-      <form @submit.prevent="applyFilters(true)">
+    <section class="events-filters" aria-labelledby="filters-title">
+      <div class="events-filters__heading">
+        <h2 id="filters-title">A little more your kind of thing.</h2>
+        <button type="button" class="events-text-button" @click="handleResetFilters">Clear filters <i class="bi bi-x-lg" aria-hidden="true"></i></button>
+      </div>
+      <form role="search" aria-label="Find events" @submit.prevent="applyFilters(true)">
         <div class="row g-3">
           <!-- Keyword / Location Search -->
           <div class="col-12 col-md-4">
             <label for="filter-search" class="form-label small fw-semibold mb-1">
-              Keyword, Venue or Location
+              Search events
             </label>
             <input
               id="filter-search"
               v-model="eventStore.filters.search"
               type="search"
               class="form-control form-control-sm"
-              placeholder="e.g. Sandown, Sepang, Kuching, Drift..."
+              placeholder="A meet, a venue, a city…"
               @input="applyFilters(true)"
             />
           </div>
@@ -173,9 +195,9 @@ onMounted(async () => {
               class="form-select form-select-sm"
               @change="applyFilters(true)"
             >
-              <option value="All">All (AU &amp; MY)</option>
-              <option value="Australia">Australia (VIC)</option>
-              <option value="Malaysia">Malaysia (MY)</option>
+              <option value="All">Australia &amp; Malaysia</option>
+              <option value="Australia">Australia</option>
+              <option value="Malaysia">Malaysia</option>
             </select>
           </div>
 
@@ -196,7 +218,7 @@ onMounted(async () => {
           <!-- Max Price -->
           <div class="col-6 col-md-2">
             <label for="filter-price" class="form-label small fw-semibold mb-1">
-              Max Price
+              Entry price
             </label>
             <select
               id="filter-price"
@@ -205,10 +227,10 @@ onMounted(async () => {
               @change="applyFilters(true)"
             >
               <option value="">Any Price</option>
-              <option value="0">Free Entry Only ($0)</option>
-              <option value="50">Up to $50 / RM 50</option>
-              <option value="180">Up to $180 / RM 180</option>
-              <option value="250">Up to $250 / RM 250</option>
+              <option value="0">Free entry</option>
+              <option value="50">Up to A$50 / RM 50</option>
+              <option value="180">Up to A$180 / RM 180</option>
+              <option value="250">Up to A$250 / RM 250</option>
             </select>
           </div>
 
@@ -223,9 +245,9 @@ onMounted(async () => {
               class="form-select form-select-sm"
               @change="applyFilters(true)"
             >
-              <option value="all">All (Upcoming &amp; Past)</option>
+              <option value="all">Upcoming &amp; past</option>
               <option value="upcoming">Upcoming Only</option>
-              <option value="completed">Completed (Past Events)</option>
+              <option value="completed">Past events</option>
             </select>
           </div>
 
@@ -241,7 +263,7 @@ onMounted(async () => {
             >
               <option value="date">Date (Soonest First)</option>
               <option value="popularity">Popularity (Most RSVPs &amp; Likes)</option>
-              <option value="distance">Distance (Nearest to Me/Hub)</option>
+              <option value="distance">Distance (location or fallback city)</option>
               <option value="price_asc">Price (Lowest to Highest)</option>
             </select>
           </div>
@@ -250,57 +272,65 @@ onMounted(async () => {
             <div class="d-flex flex-wrap gap-2">
               <button
                 type="button"
-                class="btn btn-sm btn-outline-warning"
+                class="events-button"
                 @click="useBrowserGeolocation"
               >
-                <i class="bi bi-crosshair me-1" aria-hidden="true"></i>Sort by My Distance
+                <i class="bi bi-geo-alt" aria-hidden="true"></i>Use my location
               </button>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary"
-                @click="handleResetFilters"
-              >
-                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Reset Filters
+              <button type="submit" class="events-button events-button--accent">
+                Find events <i class="bi bi-arrow-right" aria-hidden="true"></i>
               </button>
             </div>
 
-            <span v-if="geoStatus" class="small text-warning font-monospace">
+            <span v-if="geoStatus" class="events-location-note" role="status">
               <i class="bi bi-geo-fill me-1" aria-hidden="true"></i>{{ geoStatus }}
             </span>
           </div>
         </div>
       </form>
+      <p class="events-filter-note">Price limits apply in each event’s local currency: A$ for Australia, RM for Malaysia.</p>
+      <p v-if="categoriesError" class="events-filter-note" role="status">
+        Event types couldn’t load. You can still search using the other filters.
+        <button type="button" class="events-text-button" @click="loadCategories">Try again</button>
+      </p>
     </section>
 
-    <!-- Results Count Bar -->
-    <div class="d-flex align-items-center justify-content-between mb-3 small text-body-secondary">
-      <div>
-        Found <strong class="font-monospace">{{ eventStore.pagination.total }}</strong> matching motorsport event(s)
-      </div>
-      <div class="font-monospace">
-        Page {{ eventStore.pagination.page }} of {{ eventStore.pagination.total_pages }}
-      </div>
+    <section class="events-results" aria-labelledby="results-title" :aria-busy="eventStore.loading">
+    <div class="events-results__heading">
+      <h2 id="results-title">On the calendar</h2>
+      <p role="status" aria-live="polite" aria-atomic="true">
+        <template v-if="eventStore.loading">Finding events…</template>
+        <template v-else-if="eventStore.error">Events unavailable</template>
+        <template v-else>{{ eventStore.pagination.total }} {{ eventStore.pagination.total === 1 ? 'event' : 'events' }} found<span v-if="eventStore.pagination.total > 0"> · Page {{ eventStore.pagination.page }} of {{ eventStore.pagination.total_pages }}</span></template>
+      </p>
     </div>
 
     <!-- Skeleton Shimmer Loading Grid -->
-    <div v-if="eventStore.loading" class="row g-4">
-      <div v-for="n in 6" :key="n" class="col-12 col-md-6 col-lg-4">
+    <div v-if="eventStore.loading" class="row g-4" aria-hidden="true">
+      <div v-for="n in 6" :key="n" class="col-12 col-md-6 col-xl-4">
         <SkeletonCard />
       </div>
+    </div>
+
+    <div v-else-if="eventStore.error" class="events-empty" role="alert">
+      <i class="bi bi-cloud-slash" aria-hidden="true"></i>
+      <h3>We couldn’t load the calendar.</h3>
+      <p>Please try again. Your search and filters are still here.</p>
+      <button type="button" class="events-button events-button--accent" @click="applyFilters(false)">Try again <i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
     </div>
 
     <!-- Empty State -->
     <div
       v-else-if="eventStore.events.length === 0"
-      class="apex-card p-5 text-center my-3"
+      class="events-empty"
     >
-      <i class="bi bi-search display-5 text-secondary mb-2 d-block" aria-hidden="true"></i>
-      <h2 class="h5 fw-bold">No Events Match Your Current Filters</h2>
-      <p class="text-body-secondary small mb-3">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <h3>No events just yet.</h3>
+      <p>
         Try clearing your search keyword, expanding the price limit, or switching regions.
       </p>
-      <button type="button" class="btn btn-sm btn-apex" @click="handleResetFilters">
-        Show All Events
+      <button type="button" class="events-button events-button--accent" @click="handleResetFilters">
+        Clear filters
       </button>
     </div>
 
@@ -309,7 +339,7 @@ onMounted(async () => {
       <div
         v-for="ev in eventStore.events"
         :key="ev.id"
-        class="col-12 col-md-6 col-lg-4"
+        class="col-12 col-md-6 col-xl-4"
       >
         <EventCard :event="ev" @toggle-like="handleToggleLike" />
       </div>
@@ -317,10 +347,80 @@ onMounted(async () => {
 
     <!-- Reusable Pagination Component -->
     <PaginationBar
+      v-if="!eventStore.loading && !eventStore.error && eventStore.events.length"
       :page="eventStore.pagination.page"
       :total-pages="eventStore.pagination.total_pages"
       :total-items="eventStore.pagination.total"
       @change-page="handlePageChange"
     />
+    </section>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.events-page {
+  --scene-bg: #101110;
+  --scene-surface: #171917;
+  --scene-text: #f4f2eb;
+  --scene-muted: #b3b5ac;
+  --scene-border: #343731;
+  --scene-accent: #ff775f;
+  --apex-bg-surface: var(--scene-bg);
+  --apex-bg-elevated: var(--scene-surface);
+  --apex-text-primary: var(--scene-text);
+  --apex-text-muted: var(--scene-muted);
+  --apex-border-strong: var(--scene-border);
+  --apex-red: var(--scene-accent);
+  min-height: 70vh;
+  padding-bottom: 4rem;
+  color: var(--scene-text);
+  background: var(--scene-bg);
+}
+:global([data-bs-theme='light']) .events-page {
+  --scene-bg: #f7f6f2;
+  --scene-surface: #eeeee7;
+  --scene-text: #1c211d;
+  --scene-muted: #575e55;
+  --scene-border: #cdd0c6;
+  --scene-accent: #a52e20;
+}
+.events-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 2rem; padding: 4rem 0 3rem; }
+.events-eyebrow { margin: 0 0 1.5rem; color: var(--scene-muted); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+.events-heading h1 { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: clamp(2.8rem, 6vw, 5.5rem); font-weight: 700; letter-spacing: -0.06em; line-height: 1; }
+.events-heading h1 span { color: var(--scene-accent); }
+.events-heading__intro { max-width: 34rem; margin: 1.5rem 0 0; color: var(--scene-muted); font-size: 0.95rem; line-height: 1.8; }
+.events-heading__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.events-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 48px; padding: 0.75rem 1rem; border: 1px solid var(--scene-border); border-radius: 0.25rem; background: transparent; color: var(--scene-text); font: inherit; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+.events-button:hover { background: var(--scene-surface); }
+.events-button--accent { border-color: #bb3827; background: #bb3827; color: #fff; }
+.events-button--accent:hover { border-color: #9e2c1e; background: #9e2c1e; color: #fff; }
+.events-text-button { display: inline-flex; align-items: center; gap: 0.75rem; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--scene-text); font: inherit; font-size: 0.8rem; text-decoration: underline; text-underline-offset: 0.25em; }
+.events-filters { padding: 1.5rem 0 1.75rem; border-top: 1px solid var(--scene-border); border-bottom: 1px solid var(--scene-border); }
+.events-filters__heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 1rem; }
+.events-filters h2 { margin: 0; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.025em; }
+.events-filters label { color: var(--scene-muted); font-size: 0.75rem; }
+.events-filters :is(input, select) { min-width: 0; min-height: 48px; padding: 0.65rem; border: 1px solid var(--scene-border); border-radius: 0.25rem; color: var(--scene-text); background-color: var(--scene-bg); font-size: 0.85rem; color-scheme: dark; box-shadow: none; }
+.events-filters input::placeholder { color: var(--scene-muted); opacity: 1; }
+:global([data-bs-theme='light']) .events-filters :is(input, select) { color-scheme: light; }
+.events-filter-note, .events-location-note { margin: 1rem 0 0; color: var(--scene-muted); font-size: 0.75rem; line-height: 1.7; }
+.events-location-note { flex-basis: 100%; margin: 0.25rem 0 0; }
+.events-filter-note .events-text-button { margin-left: 0.5rem; }
+.events-results { padding-top: 2.5rem; }
+.events-results__heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem 1rem; margin-bottom: 1.5rem; }
+.events-results h2 { margin: 0; font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 700; letter-spacing: -0.04em; }
+.events-results__heading p { margin: 0; color: var(--scene-muted); font-size: 0.85rem; }
+.events-empty { padding: 4rem 1.25rem; text-align: center; }
+.events-empty > i { display: block; margin-bottom: 1.25rem; color: var(--scene-muted); font-size: 2rem; }
+.events-empty h3 { font-size: 1.5rem; letter-spacing: -0.025em; }
+.events-empty p { max-width: 30rem; margin: 0.75rem auto 1.5rem; color: var(--scene-muted); line-height: 1.7; }
+.events-page :is(a, button, input, select):focus-visible { outline: 2px solid var(--scene-accent); outline-offset: 4px; box-shadow: none; }
+@media (max-width: 767.98px) {
+  .events-heading { padding: 2.5rem 0 2rem; gap: 1.5rem; }
+  .events-eyebrow { max-width: 22rem; font-size: 0.65rem; line-height: 1.8; }
+  .events-heading__actions { width: 100%; }
+  .events-heading__actions .events-button { flex: 1; }
+  .events-filters h2 { font-size: 1.1rem; }
+  .events-results { padding-top: 2rem; }
+}
+</style>

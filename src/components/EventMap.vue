@@ -135,14 +135,23 @@ function renderMarkers() {
   }
 }
 
-function jumpToRegion(regionKey) {
+function setRegion(regionKey) {
   activeRegion.value = regionKey
-  emit('region-change', regionKey)
   if (!mapInstance) return
-
   const hub = REGION_HUBS[regionKey] || REGION_HUBS.All
-  mapInstance.flyTo([hub.lat, hub.lng], hub.zoom, { duration: 0.9 })
+  const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduceMotion) mapInstance.setView([hub.lat, hub.lng], hub.zoom)
+  else mapInstance.flyTo([hub.lat, hub.lng], hub.zoom, { duration: 0.9 })
 }
+
+function jumpToRegion(regionKey) {
+  setRegion(regionKey)
+  emit('region-change', regionKey)
+}
+
+watch(() => props.initialRegion, regionKey => {
+  if (activeRegion.value !== regionKey) setRegion(regionKey)
+})
 
 onMounted(() => {
   if (!mapContainer.value) return

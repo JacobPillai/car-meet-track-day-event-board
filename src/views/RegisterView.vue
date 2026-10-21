@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useToast } from '../composables/useToast'
@@ -18,16 +18,28 @@ const form = reactive({
   bio: ''
 })
 
-const validationError = ref('')
+const submissionError = ref('')
+const pending = ref(false)
+const completed = ref(false)
+const confirmationChecked = ref(false)
+const confirmationInput = ref(null)
+const errorSummary = ref(null)
+const mismatch = computed(() => confirmationChecked.value && form.password !== form.confirmPassword)
+const busy = computed(() => pending.value || completed.value || authStore.loading)
+let disposed = false
+onBeforeUnmount(() => { disposed = true })
 
 async function handleRegister() {
-  validationError.value = ''
-  if (form.password !== form.confirmPassword) {
-    validationError.value = 'Passwords do not match. Please verify both password fields.'
-    showToast(validationError.value, 'warning')
+  if (disposed || busy.value) return
+  submissionError.value = ''
+  confirmationChecked.value = true
+  if (mismatch.value) {
+    await nextTick()
+    if (!disposed) confirmationInput.value?.focus()
     return
   }
 
+  pending.value = true
   try {
     const user = await authStore.register({
       name: form.name,
@@ -37,241 +49,230 @@ async function handleRegister() {
       region: form.region,
       bio: form.bio
     })
+    if (disposed) return
+    completed.value = true
     showToast(`Account created! Welcome to ApexGrid, ${user.name}.`, 'success')
     router.push(authStore.roleHomeRoute)
   } catch (err) {
-    validationError.value = err.message || 'Registration failed.'
+    if (disposed) return
+    submissionError.value = err?.message || 'Registration failed.'
+    await nextTick()
+    if (!disposed) errorSummary.value?.focus()
+  } finally {
+    if (!disposed) pending.value = false
   }
 }
 </script>
 
 <template>
-  <div class="container py-4 py-lg-5">
-    <div class="apex-card overflow-hidden shadow-lg">
-      <div class="row g-0">
-        <!-- Left Visual Telemetry Sidebar -->
-        <div class="col-12 col-lg-4 apex-auth-visual p-4 p-md-5 d-flex flex-column justify-content-between">
-          <div>
-            <span class="badge bg-danger px-3 py-2 mb-3 text-uppercase">
-              <i class="bi bi-flag-fill me-1" aria-hidden="true"></i>Season 2026 License
-            </span>
-            <h2 class="h3 fw-bold text-white mb-3">
-              Register Your Driver or Organizer License
-            </h2>
-            <p class="small text-light opacity-75 mb-4">
-              Choose between a <strong>Member Pass</strong> for attending meets and track days, or
-              an <strong>Organizer License</strong> to publish sanctioned events across Victoria (AU)
-              and Malaysia (MY).
-            </p>
+  <div class="auth-page">
+    <div class="container auth-shell">
+      <div class="auth-layout">
+        <header class="auth-intro">
+          <p class="auth-eyebrow">Join ApexGrid</p>
+          <h1>Your next meet.<br /><span>Your kind of people.</span></h1>
+          <p class="auth-lede">
+            Car meets, weekend cruises or a day at the track. Find your community,
+            then make plans to be part of it.
+          </p>
+          <div class="auth-note">
+            <span aria-hidden="true">01 / Get together</span>
+            <p>Join as a member to RSVP and see venue details, or as an organizer to bring people together at your own events.</p>
+          </div>
+        </header>
 
-            <ul class="list-unstyled small d-flex flex-column gap-3 text-light opacity-90">
-              <li class="d-flex gap-2">
-                <i class="bi bi-check-circle-fill text-danger mt-1" aria-hidden="true"></i>
-                <span>Unlock private paddock gate addresses &amp; Clerk of Course contacts</span>
-              </li>
-              <li class="d-flex gap-2">
-                <i class="bi bi-check-circle-fill text-warning mt-1" aria-hidden="true"></i>
-                <span>Pin track days to your Offline PWA Vault for remote circuits</span>
-              </li>
-              <li class="d-flex gap-2">
-                <i class="bi bi-check-circle-fill text-info mt-1" aria-hidden="true"></i>
-                <span>Publish events &amp; monitor live Chart.js RSVP capacity telemetry</span>
-              </li>
-            </ul>
+        <section class="auth-form-section" aria-labelledby="register-heading">
+          <div class="auth-form-heading">
+            <p class="auth-eyebrow">Start here</p>
+            <h2 id="register-heading">Create your account</h2>
+            <p>Choose how you’ll take part. All fields are required unless marked optional.</p>
           </div>
 
-          <div class="pt-4 mt-4 border-top border-secondary border-opacity-50 small text-secondary font-monospace">
-            COS30043 • WCAG 2.1 AA COMPLIANT FORMS
-          </div>
-        </div>
-
-        <!-- Right Registration Form -->
-        <div class="col-12 col-lg-8 p-4 p-md-5">
-          <div class="mb-4">
-            <span class="badge bg-danger px-3 py-2 mb-2">
-              <i class="bi bi-person-plus-fill me-1" aria-hidden="true"></i>New Account Registration
-            </span>
-            <h1 class="h3 fw-bold mb-1">Join the ApexGrid Community</h1>
-            <p class="text-body-secondary small mb-0">
-              Create a <strong>Member</strong> account to RSVP and unlock venue details, or an
-              <strong>Organizer</strong> account to host events and view analytics.
-            </p>
-          </div>
-
-          <div
-            v-if="validationError || authStore.error"
-            class="alert alert-danger py-2 small"
-            role="alert"
-          >
-            <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
-            {{ validationError || authStore.error }}
-          </div>
-
-          <form @submit.prevent="handleRegister">
-            <!-- Account Role Selector -->
-            <div class="mb-3">
-              <label class="form-label small fw-semibold d-block">Select Account Type *</label>
-              <div class="row g-2">
-                <div class="col-12 col-sm-6">
-                  <input
-                    id="role-member"
-                    v-model="form.role"
-                    type="radio"
-                    class="btn-check"
-                    name="account-role"
-                    value="member"
-                  />
-                  <label class="btn btn-outline-info w-100 text-start p-3" for="role-member">
-                    <div class="fw-bold"><i class="bi bi-person-check me-1"></i>Member Pass</div>
-                    <div class="small opacity-75">RSVP, comment, rate &amp; unlock addresses</div>
-                  </label>
-                </div>
-
-                <div class="col-12 col-sm-6">
-                  <input
-                    id="role-organizer"
-                    v-model="form.role"
-                    type="radio"
-                    class="btn-check"
-                    name="account-role"
-                    value="organizer"
-                  />
-                  <label class="btn btn-outline-warning w-100 text-start p-3" for="role-organizer">
-                    <div class="fw-bold"><i class="bi bi-flag me-1"></i>Organizer License</div>
-                    <div class="small opacity-75">Create/edit events, clubs &amp; view analytics</div>
-                  </label>
-                </div>
-              </div>
+          <form :aria-busy="busy" @submit.prevent="handleRegister">
+            <div
+              v-if="submissionError"
+              ref="errorSummary"
+              class="auth-error-summary"
+              role="alert"
+              tabindex="-1"
+            >
+              {{ submissionError }}
             </div>
 
-            <div class="row g-3">
-              <div class="col-12 col-md-7 apex-field">
-                <label for="reg-name" class="form-label small fw-semibold mb-0">Full Name *</label>
-                <span id="reg-name-hint" class="field-hint">Min 3 characters</span>
-                <input
-                  id="reg-name"
-                  v-model="form.name"
-                  type="text"
-                  class="form-control"
-                  required
-                  minlength="3"
-                  autocomplete="name"
-                  aria-describedby="reg-name-hint"
-                  aria-errormessage="reg-name-error"
-                  placeholder="Alex Mercer"
-                />
-                <div id="reg-name-error" class="error-msg">
-                  <span aria-hidden="true">❌</span> Please enter your full name (at least 3 characters).
+            <fieldset class="auth-fields" :disabled="busy">
+              <legend class="auth-sr-only">Account details</legend>
+              <fieldset class="auth-roles">
+                <legend>Account type</legend>
+                <div class="auth-role-options">
+                  <label class="auth-role" for="role-member">
+                    <input id="role-member" v-model="form.role" type="radio" name="account-role" value="member" required />
+                    <span><strong>Member</strong><span>RSVP, comment and see venue details.</span></span>
+                  </label>
+                  <label class="auth-role" for="role-organizer">
+                    <input id="role-organizer" v-model="form.role" type="radio" name="account-role" value="organizer" required />
+                    <span><strong>Organizer</strong><span>Host events, manage clubs and view analytics.</span></span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <div class="auth-grid">
+                <div class="auth-field">
+                  <label for="reg-name">Full name</label>
+                  <span id="reg-name-hint" class="auth-hint">At least 3 characters</span>
+                  <input
+                    id="reg-name" v-model="form.name" name="name" type="text" required minlength="3"
+                    autocomplete="name" aria-describedby="reg-name-hint" aria-errormessage="reg-name-error"
+                    placeholder="Alex Mercer"
+                  />
+                  <span id="reg-name-error" class="auth-native-error">Please enter your full name (at least 3 characters).</span>
+                </div>
+
+                <div class="auth-field">
+                  <label for="reg-region">Home region</label>
+                  <span id="reg-region-hint" class="auth-hint">Australia or Malaysia</span>
+                  <select id="reg-region" v-model="form.region" name="region" required aria-describedby="reg-region-hint">
+                    <option value="Australia">Australia (VIC)</option>
+                    <option value="Malaysia">Malaysia (MY)</option>
+                  </select>
+                </div>
+
+                <div class="auth-field auth-full-width">
+                  <label for="reg-email">Email address</label>
+                  <span id="reg-email-hint" class="auth-hint">For example, driver@example.com</span>
+                  <input
+                    id="reg-email" v-model="form.email" name="email" type="email" required autocomplete="email"
+                    aria-describedby="reg-email-hint" aria-errormessage="reg-email-error" placeholder="you@example.com"
+                  />
+                  <span id="reg-email-error" class="auth-native-error">Please enter a valid email address.</span>
+                </div>
+
+                <div class="auth-field auth-full-width">
+                  <label for="reg-password">Password</label>
+                  <span id="reg-password-rules" class="auth-hint">Use at least 8 characters, with an uppercase letter, a lowercase letter and a number.</span>
+                  <input
+                    id="reg-password" v-model="form.password" name="password" type="password" required minlength="8"
+                    pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" autocomplete="new-password"
+                    aria-describedby="reg-password-rules" aria-errormessage="reg-password-error"
+                  />
+                  <span id="reg-password-error" class="auth-native-error">Use 8 or more characters with uppercase, lowercase and a number.</span>
+                </div>
+
+                <div class="auth-field auth-full-width">
+                  <label for="reg-confirm">Confirm password</label>
+                  <span id="reg-confirm-hint" class="auth-hint">Re-enter the same password</span>
+                  <input
+                    id="reg-confirm" ref="confirmationInput" v-model="form.confirmPassword" name="confirmPassword"
+                    type="password" required minlength="8" autocomplete="new-password"
+                    :aria-invalid="mismatch ? 'true' : undefined"
+                    :aria-describedby="mismatch ? 'reg-confirm-hint reg-confirm-error' : 'reg-confirm-hint'"
+                    :aria-errormessage="mismatch ? 'reg-confirm-error' : undefined"
+                  />
+                  <span v-if="mismatch" id="reg-confirm-error" class="auth-inline-error" role="alert">
+                    Passwords do not match. Please verify both password fields.
+                  </span>
+                </div>
+
+                <div class="auth-field auth-full-width">
+                  <label for="reg-bio">Car build / about you <span class="auth-optional">(optional)</span></label>
+                  <span id="reg-bio-hint" class="auth-hint">Tell the community a little about your car or interests.</span>
+                  <input id="reg-bio" v-model="form.bio" name="bio" type="text" aria-describedby="reg-bio-hint" placeholder="Weekend cruises and a well-loved Civic" />
                 </div>
               </div>
 
-              <div class="col-12 col-md-5 apex-field">
-                <label for="reg-region" class="form-label small fw-semibold mb-0">Home Region *</label>
-                <span class="field-hint">Sets default map &amp; distance hub</span>
-                <select id="reg-region" v-model="form.region" class="form-select" required>
-                  <option value="Australia">Australia (VIC)</option>
-                  <option value="Malaysia">Malaysia (MY)</option>
-                </select>
-              </div>
-
-              <div class="col-12 apex-field">
-                <label for="reg-email" class="form-label small fw-semibold mb-0">Email Address *</label>
-                <span id="reg-email-hint" class="field-hint">Format: driver@example.com</span>
-                <input
-                  id="reg-email"
-                  v-model="form.email"
-                  type="email"
-                  class="form-control"
-                  required
-                  autocomplete="email"
-                  aria-describedby="reg-email-hint"
-                  aria-errormessage="reg-email-error"
-                  placeholder="driver@example.com"
-                />
-                <div id="reg-email-error" class="error-msg">
-                  <span aria-hidden="true">❌</span> Please enter a valid email address.
-                </div>
-              </div>
-
-              <!-- Password with complexity rules above input (Modern Web Guidance) -->
-              <div class="col-12 col-md-6 apex-field">
-                <label for="reg-password" class="form-label small fw-semibold mb-0">
-                  Password *
-                </label>
-                <ul id="reg-password-rules" class="rules-list small ps-3 mb-1 field-hint">
-                  <li>At least 8 characters</li>
-                  <li>At least one uppercase &amp; lowercase letter</li>
-                  <li>At least one number</li>
-                </ul>
-                <input
-                  id="reg-password"
-                  v-model="form.password"
-                  type="password"
-                  class="form-control"
-                  required
-                  minlength="8"
-                  pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                  autocomplete="new-password"
-                  aria-describedby="reg-password-rules"
-                  aria-errormessage="reg-password-error"
-                  placeholder="Min 8 chars (Aa1...)"
-                />
-                <div id="reg-password-error" class="error-msg">
-                  <span aria-hidden="true">❌</span> Must contain 8+ chars, uppercase, lowercase, and a number.
-                </div>
-              </div>
-
-              <div class="col-12 col-md-6 apex-field">
-                <label for="reg-confirm" class="form-label small fw-semibold mb-0">
-                  Confirm Password *
-                </label>
-                <span id="reg-confirm-hint" class="field-hint">Re-enter the same password</span>
-                <input
-                  id="reg-confirm"
-                  v-model="form.confirmPassword"
-                  type="password"
-                  class="form-control"
-                  required
-                  minlength="8"
-                  autocomplete="new-password"
-                  aria-describedby="reg-confirm-hint"
-                  placeholder="Repeat password"
-                />
-              </div>
-
-              <div class="col-12">
-                <label for="reg-bio" class="form-label small fw-semibold">
-                  Car Build / Motorsport Bio (Optional)
-                </label>
-                <input
-                  id="reg-bio"
-                  v-model="form.bio"
-                  type="text"
-                  class="form-control"
-                  placeholder="e.g. Honda Civic Type R FL5 track build • Regular at Sandown & Sepang"
-                />
-              </div>
-            </div>
-
-            <div class="d-grid mt-4 mb-3">
-              <button
-                type="submit"
-                class="btn btn-apex py-2"
-                :disabled="authStore.loading"
-              >
-                Create {{ form.role === 'organizer' ? 'Organizer' : 'Member' }} Account
+              <button type="submit" class="auth-submit" :disabled="busy">
+                {{ completed ? 'Account created' : pending ? 'Creating account…' : `Create ${form.role === 'organizer' ? 'Organizer' : 'Member'} Account` }}
+                <span aria-hidden="true">↗</span>
               </button>
-            </div>
+            </fieldset>
+            <p v-if="pending" class="auth-status" role="status">Creating your account. Please wait.</p>
           </form>
 
-          <div class="text-center small text-body-secondary border-top pt-3">
-            Already registered?
-            <router-link to="/login" class="text-danger fw-semibold text-decoration-none">
-              Sign in here
-            </router-link>
-          </div>
-        </div>
+          <p class="auth-signin">Already registered? <router-link to="/login">Sign in</router-link></p>
+        </section>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.auth-page {
+  --auth-bg: #181a19;
+  --auth-surface: #222523;
+  --auth-text: #f3f0e9;
+  --auth-muted: #b4b6af;
+  --auth-line: #41443f;
+  --auth-accent: #ed7059;
+  color: var(--auth-text);
+  background: var(--auth-bg);
+  color-scheme: dark;
+}
+[data-bs-theme='light'] .auth-page {
+  --auth-bg: #f4f1ea;
+  --auth-surface: #e9e6de;
+  --auth-text: #242722;
+  --auth-muted: #5f625a;
+  --auth-line: #c8c9bf;
+  --auth-accent: #ae3d29;
+  color-scheme: light;
+}
+.auth-shell { padding-top: clamp(2rem, 5vw, 4.5rem); padding-bottom: clamp(3rem, 6vw, 5rem); }
+.auth-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(2rem, 6vw, 6rem); align-items: start; }
+.auth-intro { padding-top: .5rem; }
+.auth-eyebrow { color: var(--auth-accent); font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin: 0 0 1.2rem; }
+.auth-intro h1 { font-size: clamp(2.5rem, 4.6vw, 4.6rem); line-height: 1.06; letter-spacing: -.055em; font-weight: 700; margin: 0 0 1.5rem; }
+.auth-intro h1 span { color: var(--auth-muted); }
+.auth-lede { max-width: 40ch; color: var(--auth-muted); line-height: 1.8; margin: 0; }
+.auth-note { max-width: 40ch; border-top: 1px solid var(--auth-line); margin-top: 3rem; padding-top: 1.5rem; }
+.auth-note > span { color: var(--auth-accent); font-size: .72rem; letter-spacing: .05em; }
+.auth-note p { color: var(--auth-muted); font-size: .875rem; line-height: 1.8; margin: .75rem 0 0; }
+.auth-form-section { min-width: 0; border-left: 1px solid var(--auth-line); padding-left: clamp(1.5rem, 3vw, 3rem); }
+.auth-form-heading h2 { font-size: clamp(1.65rem, 2.5vw, 2.2rem); line-height: 1.15; font-weight: 600; margin: 0 0 .75rem; }
+.auth-form-heading > p:last-child { color: var(--auth-muted); font-size: .875rem; line-height: 1.7; margin: 0 0 2rem; }
+.auth-fields, .auth-roles { min-width: 0; padding: 0; margin: 0; border: 0; }
+.auth-roles { margin-bottom: 1.75rem; }
+.auth-roles legend, .auth-field label { float: none; width: auto; color: var(--auth-text); font-size: .85rem; font-weight: 600; margin: 0; }
+.auth-roles legend { margin-bottom: .75rem; }
+.auth-role-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.auth-role { display: flex; align-items: start; gap: .65rem; padding: 1rem; border: 1px solid var(--auth-line); cursor: pointer; }
+.auth-role:has(input:checked) { border-color: var(--auth-accent); background: var(--auth-surface); }
+.auth-role input { flex: 0 0 auto; margin-top: .2rem; accent-color: var(--auth-accent); }
+.auth-role strong { display: block; font-size: .875rem; font-weight: 600; margin-bottom: .4rem; }
+.auth-role span span { display: block; color: var(--auth-muted); font-size: .75rem; line-height: 1.6; }
+.auth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem 1rem; }
+.auth-field { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.auth-full-width { grid-column: 1 / -1; }
+.auth-hint, .auth-optional { color: var(--auth-muted); font-size: .75rem; font-weight: 400; line-height: 1.6; }
+.auth-field :is(input, select) { width: 100%; min-width: 0; min-height: 48px; border: 1px solid var(--auth-line); border-radius: 2px; background: var(--auth-surface); color: var(--auth-text); padding: .7rem .8rem; font: inherit; font-size: .875rem; box-shadow: none; }
+.auth-field input::placeholder { color: var(--auth-muted); opacity: 1; }
+.auth-page :is(a, button, input, select, [tabindex]):focus-visible { outline: 3px solid var(--auth-accent); outline-offset: 4px; box-shadow: none; }
+.auth-native-error { display: none; }
+.auth-field :is(input:user-invalid, select:user-invalid, input[aria-invalid='true']) { border-color: var(--auth-accent); box-shadow: none; }
+.auth-field :is(input:user-valid, select:user-valid) { border-color: var(--auth-line); }
+.auth-field input[aria-invalid='true'] { border-color: var(--auth-accent); }
+.auth-field input:user-invalid + .auth-native-error { display: block; }
+.auth-native-error, .auth-inline-error { color: var(--auth-accent); font-size: .8rem; line-height: 1.6; }
+.auth-error-summary { border-left: 3px solid var(--auth-accent); padding: 1rem; margin-bottom: 1.5rem; background: var(--auth-surface); color: var(--auth-text); font-size: .875rem; overflow-wrap: anywhere; }
+.auth-submit { display: flex; justify-content: space-between; align-items: center; gap: .75rem; width: 100%; min-height: 50px; margin-top: 1.75rem; padding: .85rem 1rem; border: 1px solid var(--auth-accent); border-radius: 2px; background: var(--auth-accent); color: var(--auth-bg); font: inherit; font-size: .875rem; font-weight: 700; }
+.auth-submit:hover:not(:disabled) { background: var(--auth-text); border-color: var(--auth-text); }
+.auth-submit:disabled { cursor: wait; opacity: .7; }
+.auth-fields:disabled .auth-role { cursor: wait; }
+.auth-status { color: var(--auth-muted); font-size: .8rem; margin: 1rem 0 0; }
+.auth-signin { margin: 1.75rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--auth-line); color: var(--auth-muted); font-size: .875rem; }
+.auth-signin a { color: var(--auth-accent); font-weight: 600; text-underline-offset: .25em; margin-left: .35rem; }
+.auth-signin a:hover { color: var(--auth-text); }
+.auth-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 991.98px) {
+  .auth-layout { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .auth-intro h1 { font-size: clamp(2.5rem, 6vw, 3.5rem); }
+  .auth-lede { max-width: 58ch; }
+  .auth-note { display: none; }
+  .auth-form-section { border-left: 0; border-top: 1px solid var(--auth-line); padding: 2rem 0 0; }
+}
+@media (max-width: 575.98px) {
+  .auth-shell { padding-top: 1.5rem; }
+  .auth-intro h1 { font-size: 2.5rem; }
+  .auth-grid, .auth-role-options { grid-template-columns: minmax(0, 1fr); }
+  .auth-role { padding: .85rem; }
+  .auth-form-heading > p:last-child { margin-bottom: 1.5rem; }
+}
+</style>

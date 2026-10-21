@@ -55,10 +55,7 @@ function goTo(path) {
 }
 
 function handleKeydown(e) {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-    e.preventDefault()
-    if (props.open) emit('close')
-  } else if (e.key === 'Escape' && props.open) {
+  if (e.key === 'Escape' && props.open) {
     emit('close')
   }
 }

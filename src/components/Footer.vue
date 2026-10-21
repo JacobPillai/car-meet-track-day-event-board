@@ -1,16 +1,48 @@
 <script setup>
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useOfflineEvents } from '../composables/useOfflineEvents'
 import { resetLocalDb } from '../services/localDb'
 
 const { canInstallPwa, promptPwaInstall, savedEvents } = useOfflineEvents()
-const showCreditsModal = ref(false)
+const showCredits = ref(false)
+const creditsToggle = ref(null)
+const installing = ref(false)
+const installError = ref('')
+const discoveryLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/events', label: 'Browse events' },
+  { to: '/explore', label: 'Map & calendar' },
+  { to: '/clubs', label: 'Car clubs' },
+  { to: '/about', label: 'About ApexGrid' }
+]
+const accountLinks = [
+  { to: '/login', label: 'Sign in' },
+  { to: '/my-events', label: 'My RSVPs & saved events' },
+  { to: '/dashboard', label: 'Organizer dashboard' },
+  { to: '/admin', label: 'Admin moderation' }
+]
+
+async function closeCredits() {
+  showCredits.value = false
+  await nextTick()
+  creditsToggle.value?.focus()
+}
+
+async function installApp() {
+  if (installing.value) return
+  installing.value = true
+  installError.value = ''
+  try {
+    await promptPwaInstall()
+  } catch {
+    installError.value = 'The install prompt could not open. Please try again.'
+  } finally {
+    installing.value = false
+  }
+}
 
 function handleResetSeedData() {
-  if (
-    typeof window !== 'undefined' &&
-    window.confirm('Reset local database back to initial seeded Australia & Malaysia events?')
-  ) {
+  if (window.confirm('Reset the local demo database? This replaces local accounts, events, RSVPs, likes and comments with the original seed data. It does not reset the server database or your offline-saved events.')) {
     resetLocalDb()
     window.location.reload()
   }
@@ -18,115 +50,149 @@ function handleResetSeedData() {
 </script>
 
 <template>
-  <footer class="border-top mt-5 py-4" style="background-color: var(--apex-bg-surface)">
+  <footer class="site-footer" aria-label="Site footer">
     <div class="container">
-      <div class="row g-4 align-items-start">
-        <div class="col-12 col-md-5">
-          <div class="d-flex align-items-center gap-2 fw-bold fs-5 mb-2">
-            <span class="badge bg-danger"><i class="bi bi-speedometer2"></i></span>
-            <span>APEX<span class="text-danger">GRID</span></span>
-            <span class="badge bg-secondary-subtle text-body-secondary font-monospace" style="font-size: 0.68rem">
-              v2.0 TELEMETRY
-            </span>
+      <div class="footer-main">
+        <div class="footer-intro">
+          <router-link to="/" class="footer-brand" aria-label="ApexGrid home">
+            <span class="footer-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span>APEXGRID</span>
+          </router-link>
+          <p class="footer-tagline">Good cars. Better company.</p>
+          <p class="footer-description">Find car meets, shows, drives and track days across Australia and Malaysia. Find your people along the way.</p>
+          <div class="footer-offline">
+            <i class="bi bi-bookmark" aria-hidden="true"></i>
+            <span>{{ savedEvents.length }} {{ savedEvents.length === 1 ? 'event' : 'events' }} saved for offline</span>
           </div>
-          <p class="text-body-secondary small mb-2">
-            Community Car Meet, Drift, Drag &amp; Track-Day Event Board connecting motorsport
-            organizers and drivers across <strong>Melbourne / Victoria (AU)</strong> and
-            <strong>Sepang &amp; Sarawak (MY)</strong>.
-          </p>
-          <div class="d-flex flex-wrap gap-2 align-items-center">
-            <button
-              v-if="canInstallPwa"
-              type="button"
-              class="btn btn-sm btn-apex"
-              @click="promptPwaInstall"
-            >
-              <i class="bi bi-download me-1" aria-hidden="true"></i>Install ApexGrid PWA
-            </button>
-            <span class="badge bg-secondary-subtle text-body-secondary font-monospace">
-              <i class="bi bi-cloud-check me-1 text-success" aria-hidden="true"></i>
-              Offline Vault: {{ savedEvents.length }} Event(s)
-            </span>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary py-0 px-2"
-              @click="showCreditsModal = !showCreditsModal"
-            >
-              <i class="bi bi-journal-code me-1" aria-hidden="true"></i>Sources &amp; Credits
-            </button>
-          </div>
-        </div>
-
-        <div class="col-6 col-md-3">
-          <h2 class="h6 fw-bold text-uppercase mb-2">Platform Navigation</h2>
-          <ul class="list-unstyled small mb-0 d-flex flex-column gap-1">
-            <li><router-link to="/" class="text-decoration-none text-body-secondary">Home</router-link></li>
-            <li><router-link to="/events" class="text-decoration-none text-body-secondary">Browse All Events</router-link></li>
-            <li><router-link to="/explore" class="text-decoration-none text-body-secondary">Interactive Map &amp; Calendar</router-link></li>
-            <li><router-link to="/clubs" class="text-decoration-none text-body-secondary">Verified Car Clubs (6)</router-link></li>
-            <li><router-link to="/about" class="text-decoration-none text-body-secondary">About &amp; Phase 2 Roadmap</router-link></li>
-          </ul>
-        </div>
-
-        <div class="col-6 col-md-4">
-          <h2 class="h6 fw-bold text-uppercase mb-2">Account Portals &amp; COS30043</h2>
-          <ul class="list-unstyled small mb-2 d-flex flex-column gap-1">
-            <li><router-link to="/login" class="text-decoration-none text-body-secondary">Guest Sign In / Register</router-link></li>
-            <li><router-link to="/my-events" class="text-decoration-none text-body-secondary">Member RSVPs &amp; Offline Vault</router-link></li>
-            <li><router-link to="/dashboard" class="text-decoration-none text-body-secondary">Organizer Analytics Dashboard</router-link></li>
-            <li><router-link to="/admin" class="text-decoration-none text-body-secondary">Admin Moderation Panel</router-link></li>
-          </ul>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-secondary"
-            title="Restore default seed data if modified during testing"
-            @click="handleResetSeedData"
-          >
-            <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reset Seed Database
+          <button v-if="canInstallPwa" type="button" class="footer-install" :disabled="installing" @click="installApp">
+            <i class="bi bi-download" aria-hidden="true"></i>
+            {{ installing ? 'Opening install prompt…' : 'Install ApexGrid' }}
           </button>
+          <p v-if="installError" class="footer-error" role="alert">{{ installError }}</p>
+        </div>
+        <nav aria-label="Footer discovery" class="footer-links">
+          <h2>Find your next gathering</h2>
+          <ul>
+            <li v-for="link in discoveryLinks" :key="link.to"><router-link :to="link.to">{{ link.label }}</router-link></li>
+          </ul>
+        </nav>
+        <nav aria-label="Footer account" class="footer-links">
+          <h2>Your ApexGrid</h2>
+          <ul>
+            <li v-for="link in accountLinks" :key="link.to"><router-link :to="link.to">{{ link.label }}</router-link></li>
+          </ul>
+          <p class="footer-access-note">Organizer and admin tools require the appropriate account role.</p>
+        </nav>
+      </div>
+
+      <div class="footer-resources">
+        <button ref="creditsToggle" type="button" class="footer-text-button" :aria-expanded="showCredits" aria-controls="apex-footer-credits" @click="showCredits = !showCredits">
+          Sources &amp; credits <i class="bi" :class="showCredits ? 'bi-dash' : 'bi-plus'" aria-hidden="true"></i>
+        </button>
+        <div class="footer-demo-tools">
+          <span>Local demo tools</span>
+          <button type="button" class="footer-text-button footer-reset" title="Restore the local demo database to its original seed data" @click="handleResetSeedData">Reset seed database</button>
         </div>
       </div>
 
-      <!-- Collapsible Academic Sources & Credits Drawer -->
-      <div v-if="showCreditsModal" class="mt-4 p-3 rounded-3 border small" style="background-color: var(--apex-bg-elevated)">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h3 class="h6 fw-bold mb-0">
-            <i class="bi bi-award-fill text-warning me-2" aria-hidden="true"></i>
-            Academic Report Sources, Media Credits &amp; Open-Source Attributions (See <code>CREDITS.md</code>)
-          </h3>
-          <button
-            type="button"
-            class="btn-close btn-sm"
-            aria-label="Close credits panel"
-            @click="showCreditsModal = false"
-          ></button>
+      <section v-if="showCredits" id="apex-footer-credits" class="footer-credits" aria-labelledby="apex-footer-credits-title" @keydown.esc.stop.prevent="closeCredits">
+        <div class="footer-credits-heading">
+          <h2 id="apex-footer-credits-title">Sources &amp; credits</h2>
+          <button type="button" class="footer-close" aria-label="Close credits panel" @click="closeCredits"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
         </div>
-        <div class="row g-3 text-body-secondary" style="font-size: 0.78rem">
-          <div class="col-12 col-md-4">
-            <strong class="text-body d-block mb-1">Frameworks &amp; Libraries (MIT):</strong>
-            Vue 3.5, Vue Router 4, Pinia 3, Vite 6, Bootstrap 5.3 + Bootstrap Icons, Leaflet 1.9 + OpenStreetMap (ODbL), FullCalendar v6, Chart.js 4 + vue-chartjs, vite-plugin-pwa (Workbox), Vitest + Vue Test Utils.
+        <p>Academic references and third-party attributions are recorded in the project's <code>CREDITS.md</code>. Dependency versions are listed in <code>package.json</code> and its lockfile.</p>
+        <div class="footer-credit-columns">
+          <div>
+            <h3>Built with</h3>
+            <p>Vue, Vue Router, Pinia, Vite, Bootstrap &amp; Bootstrap Icons, Leaflet, FullCalendar, Chart.js &amp; vue-chartjs, vite-plugin-pwa &amp; Workbox, Vitest &amp; Vue Test Utils.</p>
+            <p>Map data © OpenStreetMap contributors. Mapping data and software have their own licence terms; see the project credits.</p>
           </div>
-          <div class="col-12 col-md-4">
-            <strong class="text-body d-block mb-1">Typography &amp; Visual Inspiration:</strong>
-            Google Fonts (<code>Space Grotesk</code>, <code>Inter</code>, <code>JetBrains Mono</code> — SIL OFL 1.1). Motorsport UI inspired by Formula 1 Official Timing App, Porsche Track Precision App, MotorsportReg, and Speedhunters.
+          <div>
+            <h3>Type &amp; design</h3>
+            <p>Space Grotesk, Inter and JetBrains Mono from Google Fonts (SIL Open Font License). Earlier design references include Formula 1 timing, Porsche Track Precision, MotorsportReg and Speedhunters.</p>
+            <p>The current direction is community-first automotive: photography, confident type and quieter controls.</p>
           </div>
-          <div class="col-12 col-md-4">
-            <strong class="text-body d-block mb-1">Photography &amp; Infrastructure:</strong>
-            Event &amp; club photography sourced from Unsplash under the Unsplash License (full URLs documented in <code>CREDITS.md</code>). Deployed for Swinburne FeeNIX / Mercury Server (PHP 5.4+ / MariaDB 5.5).
+          <div>
+            <h3>Photography &amp; project</h3>
+            <p>Seed event and club image URLs are documented in <code>CREDITS.md</code> as Unsplash sources. The homepage photograph's source and licence still need verification.</p>
+            <p>Built for COS30043 at Swinburne, with a PHP/MariaDB API and a local demo-data fallback. Deployment and live-service operation are not established by this page.</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <hr class="my-3 opacity-25" />
-
-      <div class="d-flex flex-wrap justify-content-between align-items-center small text-body-secondary gap-2">
-        <div>
-          COS30043 Interface Design &amp; Development — Team: Jacob, Syed, Naveed &amp; Gibson
-        </div>
-        <div class="font-monospace" style="font-size: 0.75rem">
-          Mercury Ready (Vue 3 + Pinia + Leaflet + FullCalendar + Chart.js + PWA + PHP/MariaDB)
-        </div>
+      <div class="footer-bottom">
+        <p>COS30043 · Interface Design &amp; Development</p>
+        <p>Made by Jacob, Syed, Naveed &amp; Gibson</p>
       </div>
     </div>
   </footer>
 </template>
+
+<style scoped>
+.site-footer {
+  --footer-bg: #141413;
+  --footer-text: #f4f1eb;
+  --footer-muted: #b6b2aa;
+  --footer-line: #363530;
+  --footer-accent: #ef755e;
+  margin-top: 4rem;
+  padding: 3.5rem 0 1.25rem;
+  background: var(--footer-bg);
+  color: var(--footer-text);
+  border-top: 1px solid var(--footer-line);
+}
+[data-bs-theme='light'] .site-footer {
+  --footer-bg: #eeebe4;
+  --footer-text: #25241f;
+  --footer-muted: #615d54;
+  --footer-line: #cec8bc;
+  --footer-accent: #a83b27;
+}
+.footer-main { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 3.5rem; padding-bottom: 2.5rem; }
+.footer-intro { max-width: 26rem; }
+.footer-brand { display: inline-flex; align-items: center; gap: .75rem; color: var(--footer-text); font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.2rem; letter-spacing: .06em; text-decoration: none; min-height: 44px; }
+.footer-mark { display: flex; align-items: center; gap: 3px; width: 28px; height: 25px; transform: skewX(-20deg); }
+.footer-mark span { width: 6px; height: 17px; background: currentColor; }
+.footer-mark span:nth-child(2) { height: 24px; }
+.footer-mark span:last-child { height: 12px; color: var(--footer-accent); }
+.footer-tagline { font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; margin: 1rem 0 .6rem; }
+.footer-description, .footer-access-note, .footer-credits p { color: var(--footer-muted); line-height: 1.7; font-size: .875rem; }
+.footer-description { margin-bottom: 1.25rem; }
+.footer-offline { display: flex; align-items: center; gap: .6rem; color: var(--footer-muted); font-size: .8rem; }
+.footer-install { margin-top: 1rem; min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--footer-line); border-radius: 999px; background: transparent; color: var(--footer-text); font-size: .85rem; display: inline-flex; gap: .6rem; align-items: center; }
+.footer-install:disabled { opacity: .65; cursor: wait; }
+.footer-error { color: var(--footer-accent); font-size: .85rem; margin: .75rem 0 0; }
+.footer-links h2 { font: 600 .85rem 'Inter', sans-serif; margin: .85rem 0 1rem; }
+.footer-links ul { padding: 0; margin: 0; list-style: none; }
+.footer-links a { color: var(--footer-muted); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; font-size: .875rem; }
+.footer-links a:hover, .footer-brand:hover, .footer-text-button:hover { color: var(--footer-accent); }
+.footer-access-note { font-size: .75rem; max-width: 24ch; margin: .75rem 0 0; }
+.footer-resources { border-top: 1px solid var(--footer-line); border-bottom: 1px solid var(--footer-line); display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .65rem 0; }
+.footer-text-button { min-height: 44px; border: 0; padding: .5rem 0; background: transparent; color: var(--footer-text); font-size: .8rem; display: inline-flex; align-items: center; gap: .75rem; text-align: left; }
+.footer-demo-tools { display: flex; align-items: center; gap: 1.25rem; }
+.footer-demo-tools > span { color: var(--footer-muted); font-size: .75rem; }
+.footer-reset { color: var(--footer-muted); text-decoration: underline; text-underline-offset: 4px; }
+.footer-credits { padding: 1.5rem 0; border-bottom: 1px solid var(--footer-line); }
+.footer-credits-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.footer-credits h2 { font-size: 1.2rem; margin: 0; }
+.footer-credits h3 { font-size: .9rem; margin: .75rem 0; }
+.footer-credits code { color: var(--footer-text); overflow-wrap: anywhere; }
+.footer-close { width: 44px; height: 44px; flex-shrink: 0; background: transparent; color: var(--footer-text); border: 1px solid var(--footer-line); border-radius: 50%; }
+.footer-credit-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+.footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; padding-top: 1.25rem; color: var(--footer-muted); font-size: .75rem; }
+.footer-bottom p { margin: 0; }
+.site-footer :is(a, button):focus-visible { outline: 2px solid var(--footer-accent); outline-offset: 4px; }
+@media (max-width: 991px) {
+  .footer-main { grid-template-columns: 1.2fr 1fr 1fr; gap: 1.75rem; }
+  .footer-credit-columns { grid-template-columns: 1fr; gap: .5rem; }
+}
+@media (max-width: 767px) {
+  .site-footer { margin-top: 2.5rem; padding-top: 2.5rem; }
+  .footer-main { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem 1.25rem; }
+  .footer-intro { grid-column: 1 / -1; }
+  .footer-links h2 { line-height: 1.5; }
+  .footer-resources { align-items: flex-start; flex-direction: column; gap: 0; }
+  .footer-demo-tools { justify-content: space-between; width: 100%; gap: .75rem; }
+  .footer-bottom { flex-direction: column; }
+}
+</style>
