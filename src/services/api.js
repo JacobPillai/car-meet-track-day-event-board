@@ -10,6 +10,25 @@
 import { handleLocalRequest } from './localDb'
 
 const TOKEN_STORAGE_KEY = 'apexgrid_jwt_token'
+let activeBackendEngine = 'local-db'
+let totalApiRequests = 0
+
+export function getApiEngineTelemetry() {
+  const isMercuryHost =
+    typeof window !== 'undefined' &&
+    ((window.location.hostname || '').includes('swin.edu.au') ||
+      (window.location.hostname || '').includes('mercury'))
+  return {
+    mode: activeBackendEngine,
+    label:
+      activeBackendEngine === 'php-mysql'
+        ? 'PHP 5.4 + MariaDB (Swinburne Mercury)'
+        : 'LocalDB Relational Engine (7 Tables)',
+    isMercuryHost,
+    totalApiRequests,
+    online: typeof navigator !== 'undefined' ? navigator.onLine : true
+  }
+}
 
 export function getStoredToken() {
   try {
@@ -44,6 +63,7 @@ function shouldAttemptPhpApi() {
 
 async function request(method, endpoint, { params = {}, body = null } = {}) {
   const token = getStoredToken()
+  totalApiRequests += 1
 
   if (shouldAttemptPhpApi() && navigator.onLine) {
     try {
@@ -75,6 +95,7 @@ async function request(method, endpoint, { params = {}, body = null } = {}) {
           err.status = res.status
           throw err
         }
+        activeBackendEngine = 'php-mysql'
         return data
       }
     } catch (err) {
@@ -85,6 +106,7 @@ async function request(method, endpoint, { params = {}, body = null } = {}) {
     }
   }
 
+  activeBackendEngine = 'local-db'
   return handleLocalRequest(method, endpoint, params, body || {}, token)
 }
 

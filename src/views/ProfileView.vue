@@ -1,31 +1,60 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
+import { POPULAR_VEHICLE_MAKES, fetchVehicleModelsForMake } from '../services/externalApis'
 
 const authStore = useAuthStore()
 
 const form = reactive({
   name: '',
   region: 'Australia',
+  vehicle: '',
   avatar: '',
   bio: ''
 })
 
+const selectedMake = ref('Honda')
+const selectedModel = ref('')
+const selectedYear = ref('2023')
+const vehicleModels = ref([])
+const vehicleApiSource = ref('')
+const loadingModels = ref(false)
 const savedMessage = ref('')
+
+async function loadNhtsaModels(make) {
+  loadingModels.value = true
+  try {
+    const res = await fetchVehicleModelsForMake(make)
+    vehicleModels.value = res.models || []
+    vehicleApiSource.value = res.source || 'NHTSA vPIC REST API'
+    if (vehicleModels.value.length && !selectedModel.value) {
+      selectedModel.value = vehicleModels.value[0]
+    }
+  } finally {
+    loadingModels.value = false
+  }
+}
+
+function applyVerifiedVehicle() {
+  if (!selectedMake.value || !selectedModel.value) return
+  form.vehicle = `${selectedYear.value || '2023'} ${selectedMake.value} ${selectedModel.value}`.trim()
+}
 
 onMounted(() => {
   if (authStore.user) {
     form.name = authStore.user.name || ''
     form.region = authStore.user.region || 'Australia'
+    form.vehicle = authStore.user.vehicle || ''
     form.avatar = authStore.user.avatar || ''
     form.bio = authStore.user.bio || ''
   }
+  loadNhtsaModels(selectedMake.value)
 })
 
 async function handleSaveProfile() {
   savedMessage.value = ''
   await authStore.updateProfile({ ...form })
-  savedMessage.value = 'Your driver profile and regional preferences have been saved.'
+  savedMessage.value = 'Your driver profile, verified garage vehicle, and regional preferences have been saved.'
 }
 </script>
 
@@ -47,14 +76,21 @@ async function handleSaveProfile() {
                 class="rounded-circle object-fit-cover border border-2 border-danger"
               />
               <div>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2">
                   <h1 class="h4 fw-bold mb-0">{{ authStore.user?.name }}</h1>
                   <span class="badge bg-danger text-uppercase">{{ authStore.userRole }}</span>
+                  <span v-if="authStore.user?.oauth_provider" class="badge bg-dark border border-secondary text-uppercase">
+                    <i class="bi bi-shield-lock-fill text-warning me-1" aria-hidden="true"></i>
+                    OAuth 2.0 · {{ authStore.user.oauth_provider }}
+                  </span>
                 </div>
                 <div class="text-body-secondary small">{{ authStore.user?.email }}</div>
                 <div class="small text-warning mt-1">
                   <i class="bi bi-globe-asia-australia me-1" aria-hidden="true"></i>
                   Home Hub: {{ authStore.user?.region || 'Australia' }}
+                  <span v-if="authStore.user?.vehicle" class="ms-2 text-info">
+                    · <i class="bi bi-car-front-fill me-1" aria-hidden="true"></i>{{ authStore.user.vehicle }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -90,6 +126,51 @@ async function handleSaveProfile() {
                   <option value="Australia">Australia (Melbourne / Victoria)</option>
                   <option value="Malaysia">Malaysia (Sepang / Kuching)</option>
                 </select>
+              </div>
+
+              <div class="col-12">
+                <div class="p-3 rounded border border-secondary bg-dark bg-opacity-25">
+                  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                    <span class="small fw-bold text-uppercase text-warning">
+                      <i class="bi bi-cpu me-1" aria-hidden="true"></i>
+                      NHTSA vPIC Vehicle Make &amp; Model Lookup (External REST API)
+                    </span>
+                    <span class="badge bg-secondary font-monospace">{{ vehicleApiSource || 'vpic.nhtsa.dot.gov' }}</span>
+                  </div>
+                  <div class="row g-2 align-items-end">
+                    <div class="col-4 col-md-2">
+                      <label for="prof-veh-year" class="form-label small mb-1">Year</label>
+                      <input id="prof-veh-year" v-model="selectedYear" type="number" min="1970" max="2027" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-8 col-md-4">
+                      <label for="prof-veh-make" class="form-label small mb-1">Make</label>
+                      <select id="prof-veh-make" v-model="selectedMake" class="form-select form-select-sm" @change="loadNhtsaModels(selectedMake)">
+                        <option v-for="mk in POPULAR_VEHICLE_MAKES" :key="mk" :value="mk">{{ mk }}</option>
+                      </select>
+                    </div>
+                    <div class="col-8 col-md-4">
+                      <label for="prof-veh-model" class="form-label small mb-1">Verified Model</label>
+                      <select id="prof-veh-model" v-model="selectedModel" class="form-select form-select-sm" :disabled="loadingModels">
+                        <option v-for="md in vehicleModels" :key="md" :value="md">{{ md }}</option>
+                      </select>
+                    </div>
+                    <div class="col-4 col-md-2">
+                      <button type="button" class="btn btn-sm btn-outline-warning w-100" @click="applyVerifiedVehicle">
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <label for="prof-vehicle" class="form-label small fw-semibold mb-1">Active Track / Meet Vehicle</label>
+                    <input
+                      id="prof-vehicle"
+                      v-model="form.vehicle"
+                      type="text"
+                      class="form-control form-control-sm"
+                      placeholder="e.g. 2023 Honda Civic Type R (FL5)"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div class="col-12">

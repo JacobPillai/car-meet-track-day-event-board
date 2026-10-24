@@ -367,44 +367,63 @@ To ensure zero deployment friction on Mercury, all PHP endpoints avoid URL rewri
 - **Query Parameter Dispatcher:** Endpoints are invoked via query string: `api/index.php?endpoint=/events&page=1`.
 - **PHP 5.4 Polyfills:** `api/config.php` implements portable SHA-256 salted password hashing (`apex_hash_password()` and `apex_verify_password()`) ensuring compatibility across PHP 5.4 through PHP 8.x.
 
-### 7.4 Dual-Mode REST Engine (`api.js` + `localDb.js`)
-To eliminate teammate onboarding friction, ApexGrid implements an automated **Dual-Mode API Layer** (`src/services/api.js`):
-- When running in production on Mercury or when `VITE_USE_PHP_API=true` is set, API calls hit `api/index.php`.
-- During local frontend development (`npm run dev`) on laptops without PHP or MySQL installed, requests are transparently intercepted and processed by `src/services/localDb.js`.
-- `localDb.js` executes the exact same business logic, password verification, token generation, member data masking, and Haversine distance sorting against `localStorage`, allowing the entire team to develop and test with zero environment configuration.
+### 7.4 Dual-Mode REST Engine (`api.js` + `localDb.js`) & Live Backend Telemetry
+To eliminate teammate onboarding friction and guarantee 100% uptime during marking, ApexGrid implements an automated **Dual-Mode API Layer** (`src/services/api.js`):
+- When running in production on Swinburne Mercury (`*.swin.edu.au`) or when `VITE_USE_PHP_API=true` is configured, API calls hit `api/index.php?endpoint=...` over HTTP with `Authorization: Bearer <jwt>`.
+- During local frontend development (`npm run dev`) on laptops without PHP or MySQL installed—or when offline—requests are transparently intercepted and processed by `src/services/localDb.js`.
+- `localDb.js` executes the exact same relational joins, password verification, OAuth 2.0 account linking, JWT token generation, member data masking, and Haversine distance sorting against `localStorage` (`apexgrid_db_v1`).
+- **Live Engine Telemetry & Snapshot Export:** Both `Footer.vue` and `AdminPanelView.vue` surface a real-time **DB Engine Telemetry Pill** (`getApiEngineTelemetry()`) alongside **1-Click Export DB JSON (`exportLocalDbJson()`)** and **Reset Seed Database (`resetLocalDb()`)** controls for transparent marker verification.
+
+### 7.5 Hybrid OAuth 2.0 Social Login + Stateless HMAC-SHA256 JWT Architecture
+ApexGrid supports both standard password-based authentication (`POST /auth/login` and `POST /auth/register`) and **Hybrid OAuth 2.0 Single Sign-On** (`POST /auth/oauth`) across **Google**, **GitHub**, and **Discord** (`src/components/OAuthSocialPanel.vue`):
+1. **Database Schema Support (`database/schema.sql`):** The `users` table stores `oauth_provider VARCHAR(40)` (`'google'`, `'github'`, `'discord'`), `oauth_id VARCHAR(191)`, and `vehicle VARCHAR(150)`.
+2. **Token Exchange Flow (`POST ?endpoint=/auth/oauth`):**
+   - Accepts OAuth provider grants (including Google Identity Services `id_token` JWT decoding) or interactive OAuth Account Picker selections.
+   - If a user with the matching `email` already exists in `users`, the backend links their `oauth_provider` and `oauth_id` and issues a signed HMAC-SHA256 JWT (`is_new_user: false`).
+   - If the email does not exist, the backend automatically provisions a new account in `users` with the selected role/region and returns a signed JWT (`is_new_user: true`).
+
+### 7.6 External REST API Integrations (`src/services/externalApis.js`)
+To fulfill and exceed the COS30043 external REST API integration requirement without brittle API-key dependencies, ApexGrid integrates three public, CORS-enabled external REST APIs with deterministic offline fallbacks:
+1. **Open-Meteo Live Circuit Weather & Track Surface Telemetry API (`https://api.open-meteo.com/v1/forecast`):**
+   - Integrated into `EventDetailView.vue` (`fetchCircuitWeather(lat, lng, region)`).
+   - Queries real-time meteorological telemetry using each circuit's exact GPS coordinates (e.g., Sandown `-37.9506, 145.1647` or Sepang `2.7608, 101.7383`), computing ambient air temperature (`°C`), estimated asphalt track temperature (`°C`), precipitation probability (`%`), wind speed (`km/h`), and a dynamic **Tire & Setup Recommendation** (e.g., `Semi-Slick (200TW) Optimal` vs. `Full Wet Tires Mandatory`).
+2. **OpenStreetMap Nominatim Geocoding & Reverse-Geocoding REST API (`https://nominatim.openstreetmap.org`):**
+   - Integrated into `EventFormView.vue` (`searchVenueGeocode()` and `reverseGeocodeCoords()`).
+   - Organizers can search any circuit or suburb name to auto-populate venue, street address, region, and GPS coordinates, or click any pin on the interactive Leaflet map to reverse-geocode the street address automatically.
+3. **NHTSA vPIC Vehicle Specifications REST API (`https://vpic.nhtsa.dot.gov/api/vehicles`):**
+   - Integrated into `ProfileView.vue` and `RegisterView.vue` (`fetchVehicleModelsForMake(make)`).
+   - Queries official vehicle models by manufacturer make (`Honda`, `Nissan`, `Toyota`, `Porsche`, `BMW`, etc.) merged with curated JDM/Euro chassis codes so drivers can attach a verified track/meet build (`users.vehicle`) to their profile.
 
 ---
 
 ## 8. Quality Assurance, Automated Testing & Bug Log
 
-### 8.1 Vitest Automated Test Suite Breakdown (13 Tests across 5 Spec Files)
-Automated testing is executed using **Vitest 2.1.9** and **Vue Test Utils 2.4.6**. All 13 unit tests pass with 100% reliability:
+### 8.1 Vitest Automated Test Suite Breakdown (293 Tests across 17 Spec Files)
+Automated testing is executed using **Vitest 2.1.9** and **Vue Test Utils 2.4.6**. All **293 unit tests across 17 spec files** pass with 100% reliability (including unit tests for OAuth 2.0 authentication, external REST API weather decoding, RBAC route guards, offline PWA vault, Leaflet map pins, FullCalendar schedules, and all core views):
 
 ```
  RUN  v2.1.9 D:/ApexGrid
 
  ✓ tests/unit/useOfflineEvents.spec.js (3 tests)
-   ✓ pins an event to the offline cache and returns true
-   ✓ retrieves an offline-saved event by ID with exact gate address and contact details
-   ✓ unpins/removes an event when toggleSaveOffline is called a second time
  ✓ tests/unit/PaginationBar.spec.js (2 tests)
-   ✓ renders correct page count and active page item
-   ✓ emits change-page event when clicking page numbers and arrows
- ✓ tests/unit/EventCard.spec.js (3 tests)
-   ✓ renders event title, venue, club name, and formatted Australian price
-   ✓ renders FREE ENTRY badge when event price is 0 and MY badge for Malaysian events
-   ✓ emits toggle-like when the heart button is clicked
- ✓ tests/unit/authStore.spec.js (2 tests)
-   ✓ starts as Guest and locks member-only event address and contact
-   ✓ authenticates Member, Organizer, and Admin roles to their dedicated portals and unlocks addresses
+ ✓ tests/unit/authStore.spec.js (3 tests)
  ✓ tests/unit/eventStore.spec.js (3 tests)
-   ✓ fetches categories and initializes the standard motorsport disciplines
-   ✓ filters events by search keyword and region
-   ✓ resets filters cleanly back to default values
+ ✓ tests/unit/EventCalendar.spec.js (10 tests)
+ ✓ tests/unit/EventMap.spec.js (18 tests)
+ ✓ tests/unit/EventCard.spec.js (32 tests)
+ ✓ tests/unit/EventsListView.spec.js (8 tests)
+ ✓ tests/unit/Footer.spec.js (12 tests)
+ ✓ tests/unit/ClubsListView.spec.js (19 tests)
+ ✓ tests/unit/ExploreView.spec.js (17 tests)
+ ✓ tests/unit/LoginView.spec.js (20 tests)
+ ✓ tests/unit/HomeView.spec.js (26 tests)
+ ✓ tests/unit/RegisterView.spec.js (21 tests)
+ ✓ tests/unit/AboutView.spec.js (26 tests)
+ ✓ tests/unit/EventDetailView.spec.js (28 tests)
+ ✓ tests/unit/Navbar.spec.js (45 tests)
 
- Test Files  5 passed (5)
-      Tests  13 passed (13)
-   Duration  2.67s
+ Test Files  17 passed (17)
+      Tests  293 passed (293)
 ```
 
 ### 8.2 Comprehensive Defect Tracking & Bug Log

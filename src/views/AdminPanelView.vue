@@ -3,11 +3,35 @@
  * ApexGrid — Admin Moderation & Role Control Portal (/admin)
  * Restricted to Admin accounts via Vue Router navigation guard + API role check.
  */
-import { ref, onMounted } from 'vue'
-import { api } from '../services/api'
+import { ref, computed, onMounted } from 'vue'
+import { api, getApiEngineTelemetry } from '../services/api'
+import { resetLocalDb, exportLocalDbJson } from '../services/localDb'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
+const engineTelemetry = computed(() => getApiEngineTelemetry())
+
+function handleAdminExportDb() {
+  const json = exportLocalDbJson()
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `apexgrid-relational-db-${new Date().toISOString().slice(0, 10)}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+  feedback.value = 'Exported 7-table relational database snapshot (.json).'
+}
+
+function handleAdminResetSeed() {
+  if (typeof window !== 'undefined' && window.confirm('Reset local demo database back to initial seed state?')) {
+    resetLocalDb()
+    feedback.value = 'Database reset to original seed state.'
+    loadAdminData()
+  }
+}
 
 const users = ref([])
 const allEvents = ref([])
@@ -99,6 +123,18 @@ onMounted(() => {
           Manage Member, Organizer, and Admin privileges, moderate all club events, and audit
           community reviews
         </p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="badge bg-dark border border-secondary py-2 px-3 font-monospace">
+          <i class="bi bi-database-check text-success me-1" aria-hidden="true"></i>
+          {{ engineTelemetry.label }}
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-info" @click="handleAdminExportDb">
+          <i class="bi bi-filetype-json me-1" aria-hidden="true"></i>Export DB JSON
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-warning" @click="handleAdminResetSeed">
+          <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reset Seed DB
+        </button>
       </div>
     </div>
 

@@ -18,13 +18,16 @@ DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS clubs;
 DROP TABLE IF EXISTS users;
 
--- 1. Users Table
+-- 1. Users Table (Supports Standard Password Hash + OAuth 2.0 Social Providers & NHTSA Vehicle Spec)
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
     email VARCHAR(191) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('member', 'organizer', 'admin') NOT NULL DEFAULT 'member',
+    oauth_provider VARCHAR(40) DEFAULT NULL,
+    oauth_id VARCHAR(191) DEFAULT NULL,
+    vehicle VARCHAR(150) DEFAULT NULL,
     avatar VARCHAR(255) DEFAULT NULL,
     region VARCHAR(60) NOT NULL DEFAULT 'Australia',
     bio TEXT DEFAULT NULL,

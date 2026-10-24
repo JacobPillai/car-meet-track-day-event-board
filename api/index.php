@@ -58,7 +58,7 @@ function format_event_row($row, $is_authenticated) {
 }
 
 // ============================================================================
-// 1. AUTH ENDPOINTS (/auth/register, /auth/login, /auth/me, /auth/profile)
+// 1. AUTH ENDPOINTS (/auth/register, /auth/login, /auth/oauth, /auth/me, /auth/profile)
 // ============================================================================
 if ($endpoint === '/auth/register' && $method === 'POST') {
     $name = isset($input['name']) ? trim($input['name']) : '';
@@ -66,6 +66,8 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
     $password = isset($input['password']) ? $input['password'] : '';
     $role = isset($input['role']) && in_array($input['role'], array('member', 'organizer')) ? $input['role'] : 'member';
     $region = isset($input['region']) ? trim($input['region']) : 'Australia';
+    $vehicle = isset($input['vehicle']) ? trim($input['vehicle']) : null;
+    $bio = isset($input['bio']) && trim($input['bio']) !== '' ? trim($input['bio']) : 'Enthusiast member on ApexGrid.';
 
     if (!$name || !$email || strlen($password) < 6) {
         send_json(array('error' => 'Name, valid email, and password (min 6 chars) are required.'), 400);
@@ -81,8 +83,8 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
     $now = date('Y-m-d H:i:s');
     $avatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80';
 
-    $ins = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, avatar, region, bio, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    $ins->execute(array($name, $email, $hash, $role, $avatar, $region, 'Enthusiast member on ApexGrid.', $now));
+    $ins = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $ins->execute(array($name, $email, $hash, $role, null, null, $vehicle, $avatar, $region, $bio, $now));
     $user_id = (int)$pdo->lastInsertId();
 
     $user_data = array(
@@ -90,9 +92,12 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
         'name' => $name,
         'email' => $email,
         'role' => $role,
+        'oauth_provider' => null,
+        'oauth_id' => null,
+        'vehicle' => $vehicle,
         'avatar' => $avatar,
         'region' => $region,
-        'bio' => 'Enthusiast member on ApexGrid.'
+        'bio' => $bio
     );
     $token = jwt_encode(array('id' => $user_id, 'email' => $email, 'role' => $role, 'name' => $name));
     send_json(array('token' => $token, 'user' => $user_data), 201);
@@ -121,9 +126,96 @@ if ($endpoint === '/auth/login' && $method === 'POST') {
     send_json(array('token' => $token, 'user' => $user));
 }
 
+if ($endpoint === '/auth/oauth' && $method === 'POST') {
+    $provider = isset($input['provider']) ? strtolower(trim($input['provider'])) : 'google';
+    if (!in_array($provider, array('google', 'github', 'discord'))) {
+        $provider = 'google';
+    }
+
+    // Optional Google Identity Services id_token payload extraction
+    if (isset($input['id_token']) && is_string($input['id_token'])) {
+        $parts = explode('.', $input['id_token']);
+        if (count($parts) === 3) {
+            $decoded = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+            if (is_array($decoded)) {
+                if (empty($input['email']) && !empty($decoded['email'])) $input['email'] = $decoded['email'];
+                if (empty($input['name']) && !empty($decoded['name'])) $input['name'] = $decoded['name'];
+                if (empty($input['oauth_id']) && !empty($decoded['sub'])) $input['oauth_id'] = $decoded['sub'];
+                if (empty($input['avatar']) && !empty($decoded['picture'])) $input['avatar'] = $decoded['picture'];
+            }
+        }
+    }
+
+    $email = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+    $name = isset($input['name']) ? trim($input['name']) : '';
+    $oauth_id = isset($input['oauth_id']) ? trim($input['oauth_id']) : ($provider . '_' . md5($email));
+    $role = isset($input['role']) && in_array($input['role'], array('member', 'organizer')) ? $input['role'] : 'member';
+    $region = isset($input['region']) ? trim($input['region']) : 'Australia';
+    $vehicle = isset($input['vehicle']) ? trim($input['vehicle']) : null;
+    $avatar = isset($input['avatar']) && trim($input['avatar']) !== ''
+        ? trim($input['avatar'])
+        : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80';
+
+    if (!$email || !$name) {
+        send_json(array('error' => 'OAuth provider email and display name are required.'), 400);
+    }
+
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+    $stmt->execute(array($email));
+    $existing = $stmt->fetch();
+
+    if ($existing) {
+        $upd = $pdo->prepare('UPDATE users SET oauth_provider = ?, oauth_id = ? WHERE id = ?');
+        $upd->execute(array($provider, $oauth_id, $existing['id']));
+        $existing['oauth_provider'] = $provider;
+        $existing['oauth_id'] = $oauth_id;
+        unset($existing['password_hash']);
+        $existing['id'] = (int)$existing['id'];
+
+        $token = jwt_encode(array(
+            'id' => $existing['id'],
+            'email' => $existing['email'],
+            'role' => $existing['role'],
+            'name' => $existing['name'],
+            'oauth_provider' => $provider
+        ));
+        send_json(array('token' => $token, 'user' => $existing, 'is_new_user' => false));
+    }
+
+    $now = date('Y-m-d H:i:s');
+    $hash = apex_hash_password('OAuth2_' . $oauth_id . '_' . time());
+    $bio = 'Authenticated via ' . ucfirst($provider) . ' OAuth 2.0 on ApexGrid.';
+
+    $ins = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $ins->execute(array($name, $email, $hash, $role, $provider, $oauth_id, $vehicle, $avatar, $region, $bio, $now));
+    $user_id = (int)$pdo->lastInsertId();
+
+    $user_data = array(
+        'id' => $user_id,
+        'name' => $name,
+        'email' => $email,
+        'role' => $role,
+        'oauth_provider' => $provider,
+        'oauth_id' => $oauth_id,
+        'vehicle' => $vehicle,
+        'avatar' => $avatar,
+        'region' => $region,
+        'bio' => $bio,
+        'created_at' => $now
+    );
+    $token = jwt_encode(array(
+        'id' => $user_id,
+        'email' => $email,
+        'role' => $role,
+        'name' => $name,
+        'oauth_provider' => $provider
+    ));
+    send_json(array('token' => $token, 'user' => $user_data, 'is_new_user' => true), 201);
+}
+
 if ($endpoint === '/auth/me' && $method === 'GET') {
     $auth = require_auth();
-    $stmt = $pdo->prepare('SELECT id, name, email, role, avatar, region, bio, created_at FROM users WHERE id = ?');
+    $stmt = $pdo->prepare('SELECT id, name, email, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at FROM users WHERE id = ?');
     $stmt->execute(array($auth['id']));
     $user = $stmt->fetch();
     if (!$user) {
@@ -137,13 +229,14 @@ if ($endpoint === '/auth/profile' && $method === 'PUT') {
     $auth = require_auth();
     $name = isset($input['name']) ? trim($input['name']) : '';
     $region = isset($input['region']) ? trim($input['region']) : 'Australia';
+    $vehicle = isset($input['vehicle']) ? trim($input['vehicle']) : null;
     $bio = isset($input['bio']) ? trim($input['bio']) : '';
     $avatar = isset($input['avatar']) ? trim($input['avatar']) : '';
 
-    $stmt = $pdo->prepare('UPDATE users SET name = ?, region = ?, bio = ?, avatar = ? WHERE id = ?');
-    $stmt->execute(array($name, $region, $bio, $avatar, $auth['id']));
+    $stmt = $pdo->prepare('UPDATE users SET name = ?, region = ?, vehicle = ?, bio = ?, avatar = ? WHERE id = ?');
+    $stmt->execute(array($name, $region, $vehicle, $bio, $avatar, $auth['id']));
 
-    $sel = $pdo->prepare('SELECT id, name, email, role, avatar, region, bio, created_at FROM users WHERE id = ?');
+    $sel = $pdo->prepare('SELECT id, name, email, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at FROM users WHERE id = ?');
     $sel->execute(array($auth['id']));
     $updated = $sel->fetch();
     $updated['id'] = (int)$updated['id'];

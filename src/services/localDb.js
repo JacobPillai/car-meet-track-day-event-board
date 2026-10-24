@@ -43,6 +43,25 @@ export function resetLocalDb() {
   return initial
 }
 
+export function getLocalDbStats() {
+  const db = getDb()
+  return {
+    users: (db.users || []).length,
+    events: (db.events || []).length,
+    clubs: (db.clubs || []).length,
+    categories: (db.categories || []).length,
+    rsvps: (db.rsvps || []).length,
+    likes: (db.event_likes || []).length,
+    comments: (db.comments || []).length
+  }
+}
+
+export function exportLocalDbJson() {
+  const db = getDb()
+  const safeUsers = (db.users || []).map(({ password: _, ...u }) => u)
+  return JSON.stringify({ ...db, users: safeUsers, exported_at: new Date().toISOString() }, null, 2)
+}
+
 /**
  * Haversine distance formula in kilometers
  */
@@ -238,6 +257,9 @@ export async function handleLocalRequest(method, endpoint, params = {}, body = {
       email,
       password,
       role,
+      oauth_provider: null,
+      oauth_id: null,
+      vehicle: body.vehicle ? String(body.vehicle).trim() : null,
       avatar:
         body.avatar ||
         'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80',
@@ -266,6 +288,79 @@ export async function handleLocalRequest(method, endpoint, params = {}, body = {
     return { token: createLocalJwt(safeUser), user: safeUser }
   }
 
+  if (cleanEndpoint === '/auth/oauth' && upperMethod === 'POST') {
+    const provider = ['google', 'github', 'discord'].includes(
+      String(body.provider || '').toLowerCase()
+    )
+      ? String(body.provider).toLowerCase()
+      : 'google'
+
+    let email = String(body.email || '').trim().toLowerCase()
+    let name = String(body.name || '').trim()
+    let oauthId = String(body.oauth_id || '').trim()
+    let avatar = body.avatar || ''
+
+    // Support decoding Google Identity Services id_token if provided
+    if (body.id_token && typeof body.id_token === 'string') {
+      const parts = body.id_token.split('.')
+      if (parts.length === 3) {
+        try {
+          const decoded = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+          if (!email && decoded.email) email = String(decoded.email).toLowerCase()
+          if (!name && decoded.name) name = String(decoded.name)
+          if (!oauthId && decoded.sub) oauthId = String(decoded.sub)
+          if (!avatar && decoded.picture) avatar = String(decoded.picture)
+        } catch {
+          // ignore malformed token in fallback
+        }
+      }
+    }
+
+    if (!email || !name) {
+      const err = new Error('OAuth provider email and display name are required.')
+      err.status = 400
+      throw err
+    }
+
+    const existingIdx = db.users.findIndex((u) => u.email.toLowerCase() === email)
+    if (existingIdx !== -1) {
+      db.users[existingIdx] = {
+        ...db.users[existingIdx],
+        oauth_provider: provider,
+        oauth_id: oauthId || db.users[existingIdx].oauth_id || `${provider}_${db.users[existingIdx].id}`
+      }
+      saveDb(db)
+      const { password: _, ...safeUser } = db.users[existingIdx]
+      return { token: createLocalJwt(safeUser), user: safeUser, is_new_user: false }
+    }
+
+    const nextId = db.users.reduce((max, u) => Math.max(max, Number(u.id)), 0) + 1
+    const role = ['member', 'organizer'].includes(body.role) ? body.role : 'member'
+    const region = body.region || 'Australia'
+    const newUser = {
+      id: nextId,
+      name,
+      email,
+      password: 'Password123!',
+      role,
+      oauth_provider: provider,
+      oauth_id: oauthId || `${provider}_${nextId}`,
+      vehicle: body.vehicle ? String(body.vehicle).trim() : null,
+      avatar:
+        avatar ||
+        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80',
+      region,
+      bio:
+        body.bio ||
+        `Authenticated via ${provider.charAt(0).toUpperCase() + provider.slice(1)} OAuth 2.0 on ApexGrid.`,
+      created_at: nowSqlString()
+    }
+    db.users.push(newUser)
+    saveDb(db)
+    const { password: _, ...safeUser } = newUser
+    return { token: createLocalJwt(safeUser), user: safeUser, is_new_user: true }
+  }
+
   if (cleanEndpoint === '/auth/me' && upperMethod === 'GET') {
     const auth = requireAuth()
     const user = db.users.find((u) => Number(u.id) === Number(auth.id))
@@ -290,6 +385,7 @@ export async function handleLocalRequest(method, endpoint, params = {}, body = {
       ...db.users[idx],
       name: body.name ? String(body.name).trim() : db.users[idx].name,
       region: body.region || db.users[idx].region,
+      vehicle: body.vehicle !== undefined ? String(body.vehicle || '').trim() : db.users[idx].vehicle,
       bio: body.bio !== undefined ? String(body.bio).trim() : db.users[idx].bio,
       avatar: body.avatar || db.users[idx].avatar
     }

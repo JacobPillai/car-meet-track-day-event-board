@@ -26,7 +26,10 @@ All npm dependencies are compiled at build time by Vite into static assets insid
 | **Chart.js 4 & vue-chartjs** (`chart.js`, `vue-chartjs`) | `^4.4.7` / `^5.3.2` | MIT | [https://www.chartjs.org/](https://www.chartjs.org/) | Organizer Analytics Dashboard (`/dashboard`) rendering Bar, Doughnut, and Cumulative Line charts. |
 | **Vite** (`vite`, `@vitejs/plugin-vue`) | `^6.1.0` | MIT | [https://vite.dev/](https://vite.dev/) | Frontend module bundler and local development server (`http://localhost:5173/`). |
 | **Vite Plugin PWA & Workbox** (`vite-plugin-pwa`) | `^0.21.1` | MIT | [https://vite-pwa-org.netlify.app/](https://vite-pwa-org.netlify.app/) | Generates `sw.js` Service Worker and `manifest.webmanifest` for offline track-day caching. |
-| **Vitest & Vue Test Utils** (`vitest`, `@vue/test-utils`, `jsdom`) | `^3.0.5` / `^2.4.6` | MIT | [https://vitest.dev/](https://vitest.dev/) | Automated unit testing suite (`7/7` passing specs across components and Pinia stores). |
+| **Vitest & Vue Test Utils** (`vitest`, `@vue/test-utils`, `jsdom`) | `^3.0.5` / `^2.4.6` | MIT | [https://vitest.dev/](https://vitest.dev/) | Automated unit testing suite (`293/293` passing tests across 17 spec files). |
+| **Open-Meteo Weather REST API** | `v1` | CC BY 4.0 | [https://open-meteo.com/en/docs](https://open-meteo.com/en/docs) | Live circuit ambient temp, track asphalt temp, wind speed & rain probability telemetry on `/events/:id`. |
+| **OpenStreetMap Nominatim Geocoding API** | `jsonv2` | ODbL | [https://nominatim.org/release-docs/latest/api/Overview/](https://nominatim.org/release-docs/latest/api/Overview/) | Live forward address search and click-on-map reverse geocoding in `EventFormView.vue`. |
+| **NHTSA vPIC Vehicle Specifications API** | `vPIC` | Public Domain (US DOT) | [https://vpic.nhtsa.dot.gov/api/](https://vpic.nhtsa.dot.gov/api/) | Live manufacturer Make & Model verification in `ProfileView.vue` and `RegisterView.vue`. |
 
 ---
 

@@ -1,13 +1,15 @@
 <script setup>
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useOfflineEvents } from '../composables/useOfflineEvents'
-import { resetLocalDb } from '../services/localDb'
+import { resetLocalDb, exportLocalDbJson } from '../services/localDb'
+import { getApiEngineTelemetry } from '../services/api'
 
 const { canInstallPwa, promptPwaInstall, savedEvents } = useOfflineEvents()
 const showCredits = ref(false)
 const creditsToggle = ref(null)
 const installing = ref(false)
 const installError = ref('')
+const engineTelemetry = computed(() => getApiEngineTelemetry())
 const discoveryLinks = [
   { to: '/', label: 'Home' },
   { to: '/events', label: 'Browse events' },
@@ -46,6 +48,19 @@ function handleResetSeedData() {
     resetLocalDb()
     window.location.reload()
   }
+}
+
+function handleExportDbSnapshot() {
+  const json = exportLocalDbJson()
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `apexgrid-db-snapshot-${new Date().toISOString().slice(0, 10)}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -90,7 +105,11 @@ function handleResetSeedData() {
           Sources &amp; credits <i class="bi" :class="showCredits ? 'bi-dash' : 'bi-plus'" aria-hidden="true"></i>
         </button>
         <div class="footer-demo-tools">
-          <span>Local demo tools</span>
+          <span class="footer-engine-pill" title="Active Dual-Mode Database & REST API Engine">
+            <i class="bi bi-hdd-network me-1" aria-hidden="true"></i>
+            DB Engine: {{ engineTelemetry.label }}
+          </span>
+          <button type="button" class="footer-text-button footer-reset" title="Export 7-table relational DB state as JSON" @click="handleExportDbSnapshot">Export DB (.json)</button>
           <button type="button" class="footer-text-button footer-reset" title="Restore the local demo database to its original seed data" @click="handleResetSeedData">Reset seed database</button>
         </div>
       </div>
