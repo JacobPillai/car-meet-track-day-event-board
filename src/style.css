@@ -437,3 +437,51 @@ textarea:focus-visible {
 .apx-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
 .apx-grid .is-wide { grid-column: 1 / -1; }
 @media (max-width: 767.98px) { .apx-grid { grid-template-columns: minmax(0, 1fr); } .apx-page { padding-block: 1.5rem 3rem; } }
+
+
+/* ==========================================================================
+   Bootstrap bridge: pages built from plain Bootstrap classes (Dashboard, Admin,
+   event form, club detail ...) pick up the new look without template changes.
+   ========================================================================== */
+:root, [data-bs-theme] {
+  --bs-border-radius: 0;
+  --bs-border-radius-sm: 0;
+  --bs-border-radius-lg: 0;
+  --bs-border-radius-xl: 0;
+  --bs-border-radius-xxl: 0;
+  --bs-body-bg: var(--apex-bg-primary);
+  --bs-body-color: var(--apex-text-primary);
+  --bs-secondary-bg: var(--apex-bg-elevated);
+  --bs-tertiary-bg: var(--apex-bg-elevated);
+  --bs-border-color: var(--apex-border-strong);
+}
+[data-bs-theme="dark"] { --bs-danger: #ff5a1f; --bs-danger-rgb: 255, 90, 31; --bs-link-color: #ff8a57; --bs-link-hover-color: #ffb08c; --bs-link-color-rgb: 255, 138, 87; }
+[data-bs-theme="light"] { --bs-danger: #c2410c; --bs-danger-rgb: 194, 65, 12; --bs-link-color: #c2410c; --bs-link-hover-color: #9a3412; --bs-link-color-rgb: 194, 65, 12; }
+.btn { --bs-btn-border-radius: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.btn-danger { --bs-btn-bg: var(--apex-red); --bs-btn-border-color: var(--apex-red); --bs-btn-color: var(--apex-on-accent); --bs-btn-hover-bg: var(--apex-red-hover); --bs-btn-hover-border-color: var(--apex-red-hover); --bs-btn-hover-color: var(--apex-on-accent); --bs-btn-active-bg: var(--apex-red-hover); --bs-btn-active-border-color: var(--apex-red-hover); --bs-btn-active-color: var(--apex-on-accent); }
+.btn-outline-danger { --bs-btn-color: var(--apex-red); --bs-btn-border-color: var(--apex-red); --bs-btn-hover-bg: var(--apex-red); --bs-btn-hover-border-color: var(--apex-red); --bs-btn-hover-color: var(--apex-on-accent); --bs-btn-active-bg: var(--apex-red); --bs-btn-active-color: var(--apex-on-accent); }
+.badge { border-radius: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.badge.bg-danger { color: var(--apex-on-accent) !important; }
+.nav-pills .nav-link, .nav-tabs .nav-link { border-radius: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.nav-pills .nav-link.bg-danger { color: var(--apex-on-accent) !important; }
+.form-control, .form-select { border-radius: 0; background-color: var(--apex-bg-primary); border-color: var(--apex-border-strong); }
+.form-control:focus, .form-select:focus { border-color: var(--apex-red); box-shadow: 0 0 0 2px var(--apex-red-glow); }
+.table { --bs-table-bg: transparent; }
+.modal-content, .dropdown-menu, .alert, .list-group-item { border-radius: 0; }
+.spinner-border.text-danger { color: var(--apex-red) !important; }
+
+/* Eyebrow labels on every page: mono caps with an orange square (Home and the apx- pages style their own). */
+:where([class*="-eyebrow"]):not(.apx-eyebrow):not(.community-eyebrow) {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Page and section titles: mono caps like the sample design. h3 and below keep the display face. */
+h1, .h1, h2, .h2 {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}

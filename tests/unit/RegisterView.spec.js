@@ -279,8 +279,8 @@ describe('Join ApexGrid registration', () => {
     expect(code).not.toContain("[data-bs-theme='light'][data-v-auth]")
     expect(descriptor.styles[0].content).not.toContain(':global')
     for (const value of [
-      '#181a19', '#222523', '#f3f0e9', '#b4b6af', '#41443f', '#ed7059',
-      '#f4f1ea', '#e9e6de', '#242722', '#5f625a', '#c8c9bf', '#ae3d29'
+      '#181a19', '#222523', '#f3f0e9', '#b4b6af', '#41443f', '#ff5a1f',
+      '#f4f1ea', '#e9e6de', '#242722', '#5f625a', '#c8c9bf', '#c2410c'
     ]) expect(code).toContain(value)
     expect(code).toContain('color-scheme: dark')
     expect(code).toContain('color-scheme: light')

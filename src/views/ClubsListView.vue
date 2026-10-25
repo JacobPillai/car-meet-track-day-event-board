@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
   --clubs-text: #f3f0e9;
   --clubs-muted: #b4b6af;
   --clubs-line: #41443f;
-  --clubs-accent: #ed7059;
+  --clubs-accent: #ff5a1f;
   --clubs-button: #bc422e;
   --clubs-button-hover: #a93827;
   color: var(--clubs-text);
@@ -270,7 +270,7 @@ onBeforeUnmount(() => {
   --clubs-text: #242722;
   --clubs-muted: #5f625a;
   --clubs-line: #c8c9bf;
-  --clubs-accent: #ae3d29;
+  --clubs-accent: #c2410c;
 }
 .clubs-shell { padding-top: clamp(2.5rem, 6vw, 5rem); padding-bottom: 2rem; }
 .clubs-header { display: flex; align-items: end; justify-content: space-between; gap: 2rem; padding-bottom: 2.5rem; }
@@ -278,7 +278,7 @@ onBeforeUnmount(() => {
 .clubs-header h1 { font-size: clamp(2.6rem, 5.8vw, 5rem); line-height: 1.04; font-weight: 700; letter-spacing: -.055em; margin: 0 0 1.5rem; }
 .clubs-header h1 span { color: var(--clubs-muted); }
 .clubs-intro { color: var(--clubs-muted); max-width: 60ch; line-height: 1.75; margin: 0; }
-.clubs-button { display: inline-flex; align-items: center; justify-content: center; gap: .8rem; min-height: 44px; padding: .7rem 1.1rem; border: 1px solid var(--clubs-line); border-radius: 3px; color: var(--clubs-text); background: transparent; font-size: .875rem; font-weight: 600; text-decoration: none; text-align: center; }
+.clubs-button { display: inline-flex; align-items: center; justify-content: center; gap: .8rem; min-height: 44px; padding: .7rem 1.1rem; border: 1px solid var(--clubs-line); border-radius: 0; color: var(--clubs-text); background: transparent; font-size: .875rem; font-weight: 600; text-decoration: none; text-align: center; }
 .clubs-header > .clubs-button { flex-shrink: 0; }
 .clubs-button:hover { background: var(--clubs-surface); color: var(--clubs-text); }
 .clubs-button--primary { color: #fff; background: var(--clubs-button); border-color: var(--clubs-button); }
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
 .clubs-field--wide { grid-column: span 2; }
 .clubs-field--full { grid-column: 1 / -1; }
 .clubs-field label, .clubs-filter-label { font-size: .8rem; font-weight: 600; }
-.clubs-field :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 46px; padding: .75rem; color: var(--clubs-text); background: var(--clubs-surface); border: 1px solid var(--clubs-line); border-radius: 3px; font: inherit; font-size: .9rem; color-scheme: dark; }
+.clubs-field :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 46px; padding: .75rem; color: var(--clubs-text); background: var(--clubs-surface); border: 1px solid var(--clubs-line); border-radius: 0; font: inherit; font-size: .9rem; color-scheme: dark; }
 [data-bs-theme='light'] .clubs-page .clubs-field :is(input, select, textarea) { color-scheme: light; }
 .clubs-field input::placeholder, .clubs-field textarea::placeholder { color: var(--clubs-muted); opacity: 1; }
 .clubs-field textarea { resize: vertical; }
@@ -309,7 +309,7 @@ onBeforeUnmount(() => {
 .clubs-search-input input { padding-left: 2.6rem; }
 .clubs-region { display: flex; flex-direction: column; gap: .5rem; }
 .clubs-region-buttons { display: flex; flex-wrap: wrap; gap: .25rem; }
-.clubs-region button { min-height: 46px; padding: .65rem .9rem; font-size: .85rem; color: var(--clubs-muted); background: transparent; border: 1px solid transparent; border-radius: 3px; }
+.clubs-region button { min-height: 46px; padding: .65rem .9rem; font-size: .85rem; color: var(--clubs-muted); background: transparent; border: 1px solid transparent; border-radius: 0; }
 .clubs-region button:hover { color: var(--clubs-text); border-color: var(--clubs-line); }
 .clubs-region button[aria-pressed='true'] { color: var(--clubs-text); background: var(--clubs-surface); border-color: var(--clubs-line); box-shadow: inset 0 -2px var(--clubs-accent); }
 .clubs-results { padding-top: 2rem; }

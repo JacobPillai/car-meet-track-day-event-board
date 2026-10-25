@@ -414,13 +414,13 @@ async function handleCustomOAuthSubmit() {
   background: var(--auth-surface, #222523);
   color: var(--auth-text, #f3f0e9);
   border: 1px solid var(--auth-line, #41443f);
-  border-radius: 2px;
+  border-radius: 0;
   font-size: 0.82rem;
   font-weight: 600;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .oauth-btn:hover:not(:disabled) {
-  border-color: var(--auth-accent, #ed7059);
+  border-color: var(--auth-accent, #ff5a1f);
   background: rgba(237, 112, 89, 0.12);
 }
 .oauth-btn:disabled {
@@ -444,8 +444,8 @@ async function handleCustomOAuthSubmit() {
   background: #1c1f1d;
   color: #f3f0e9;
   border: 1px solid #41443f;
-  border-top: 3px solid #ed7059;
-  border-radius: 4px;
+  border-top: 3px solid #ff5a1f;
+  border-radius: 0;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
@@ -474,11 +474,11 @@ async function handleCustomOAuthSubmit() {
   background: transparent;
   color: #b4b6af;
   border: 1px solid #323531;
-  border-radius: 2px;
+  border-radius: 0;
 }
 .oauth-close-btn:hover {
   color: #fff;
-  border-color: #ed7059;
+  border-color: #ff5a1f;
 }
 .oauth-modal-body {
   padding: 1.25rem;
@@ -505,18 +505,18 @@ async function handleCustomOAuthSubmit() {
   background: #242825;
   color: #f3f0e9;
   border: 1px solid #383b36;
-  border-radius: 3px;
+  border-radius: 0;
   text-align: left;
 }
 .oauth-account-item:hover:not(:disabled) {
-  border-color: #ed7059;
+  border-color: #ff5a1f;
   background: #2b2f2c;
 }
 .oauth-account-avatar {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #ed7059;
+  background: #ff5a1f;
   color: #181a19;
   font-weight: 700;
   display: flex;
@@ -539,8 +539,8 @@ async function handleCustomOAuthSubmit() {
   font-size: 0.68rem;
   padding: 0.1rem 0.45rem;
   background: rgba(237, 112, 89, 0.18);
-  color: #ed7059;
-  border-radius: 2px;
+  color: #ff5a1f;
+  border-radius: 0;
   font-family: 'JetBrains Mono', monospace;
 }
 .oauth-account-email {
@@ -553,7 +553,7 @@ async function handleCustomOAuthSubmit() {
   margin-top: 0.2rem;
 }
 .oauth-account-arrow {
-  color: #ed7059;
+  color: #ff5a1f;
   font-size: 1.1rem;
 }
 .oauth-switch-mode-btn {
@@ -561,13 +561,13 @@ async function handleCustomOAuthSubmit() {
   min-height: 42px;
   padding: 0.55rem;
   background: transparent;
-  color: #ed7059;
+  color: #ff5a1f;
   border: 1px dashed #41443f;
   font-size: 0.78rem;
   font-weight: 600;
 }
 .oauth-switch-mode-btn:hover {
-  border-color: #ed7059;
+  border-color: #ff5a1f;
   background: rgba(237, 112, 89, 0.08);
 }
 .oauth-custom-fields {
@@ -607,7 +607,7 @@ async function handleCustomOAuthSubmit() {
   padding: 0.55rem 1rem;
   font-size: 0.8rem;
   font-weight: 600;
-  border-radius: 2px;
+  border-radius: 0;
 }
 .oauth-back-btn {
   background: transparent;
@@ -615,15 +615,15 @@ async function handleCustomOAuthSubmit() {
   border: 1px solid #41443f;
 }
 .oauth-confirm-btn {
-  background: #ed7059;
+  background: #ff5a1f;
   color: #181a19;
-  border: 1px solid #ed7059;
+  border: 1px solid #ff5a1f;
 }
 .oauth-alert {
   margin: 0.85rem 1.25rem 0;
   padding: 0.65rem 0.85rem;
   font-size: 0.78rem;
-  border-radius: 2px;
+  border-radius: 0;
 }
 .oauth-alert--error {
   background: rgba(220, 53, 69, 0.15);
@@ -632,7 +632,7 @@ async function handleCustomOAuthSubmit() {
 }
 .oauth-alert--progress {
   background: rgba(237, 112, 89, 0.14);
-  border-left: 3px solid #ed7059;
+  border-left: 3px solid #ff5a1f;
   color: #f3f0e9;
 }
 .oauth-modal-footer {

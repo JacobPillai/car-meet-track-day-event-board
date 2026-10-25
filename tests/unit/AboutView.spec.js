@@ -187,7 +187,7 @@ describe('About page redesign', () => {
     expect(code).toContain("[data-bs-theme='light'] .about-page[data-v-about]")
     expect(code).not.toContain("[data-bs-theme='light'][data-v-about]")
     expect(descriptor.styles[0].content).not.toContain(':global')
-    for (const value of ['#181a19', '#f3f0e9', '#ed7059', '#f4f1ea', '#242722', '#ae3d29']) {
+    for (const value of ['#181a19', '#f3f0e9', '#ff5a1f', '#f4f1ea', '#242722', '#c2410c']) {
       expect(code).toContain(value)
     }
     expect(code).toContain(':focus-visible')

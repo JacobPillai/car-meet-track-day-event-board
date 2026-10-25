@@ -365,7 +365,7 @@ onMounted(() => {
   --scene-text: #f4f2eb;
   --scene-muted: #b3b5ac;
   --scene-border: #343731;
-  --scene-accent: #ff775f;
+  --scene-accent: #ff5a1f;
   --apex-bg-surface: var(--scene-bg);
   --apex-bg-elevated: var(--scene-surface);
   --apex-text-primary: var(--scene-text);
@@ -377,32 +377,32 @@ onMounted(() => {
   color: var(--scene-text);
   background: var(--scene-bg);
 }
-:global([data-bs-theme='light']) .events-page {
+[data-bs-theme='light'] .events-page {
   --scene-bg: #f7f6f2;
   --scene-surface: #eeeee7;
   --scene-text: #1c211d;
   --scene-muted: #575e55;
   --scene-border: #cdd0c6;
-  --scene-accent: #a52e20;
+  --scene-accent: #c2410c;
 }
 .events-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 2rem; padding: 4rem 0 3rem; }
 .events-eyebrow { margin: 0 0 1.5rem; color: var(--scene-muted); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
-.events-heading h1 { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: clamp(2.8rem, 6vw, 5.5rem); font-weight: 700; letter-spacing: -0.06em; line-height: 1; }
+.events-heading h1 { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; text-transform: uppercase; font-size: clamp(2.3rem, 5.4vw, 5rem); font-weight: 700; letter-spacing: -0.06em; line-height: 1; }
 .events-heading h1 span { color: var(--scene-accent); }
 .events-heading__intro { max-width: 34rem; margin: 1.5rem 0 0; color: var(--scene-muted); font-size: 0.95rem; line-height: 1.8; }
 .events-heading__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.events-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 48px; padding: 0.75rem 1rem; border: 1px solid var(--scene-border); border-radius: 0.25rem; background: transparent; color: var(--scene-text); font: inherit; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+.events-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 48px; padding: 0.75rem 1rem; border: 1px solid var(--scene-border); border-radius: 0; background: transparent; color: var(--scene-text); font: inherit; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
 .events-button:hover { background: var(--scene-surface); }
-.events-button--accent { border-color: #bb3827; background: #bb3827; color: #fff; }
-.events-button--accent:hover { border-color: #9e2c1e; background: #9e2c1e; color: #fff; }
+.events-button--accent { border-color: #ff5a1f; background: #ff5a1f; color: #101110; }
+.events-button--accent:hover { border-color: #e84a10; background: #e84a10; color: #101110; }
 .events-text-button { display: inline-flex; align-items: center; gap: 0.75rem; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--scene-text); font: inherit; font-size: 0.8rem; text-decoration: underline; text-underline-offset: 0.25em; }
 .events-filters { padding: 1.5rem 0 1.75rem; border-top: 1px solid var(--scene-border); border-bottom: 1px solid var(--scene-border); }
 .events-filters__heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 1rem; }
 .events-filters h2 { margin: 0; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.025em; }
 .events-filters label { color: var(--scene-muted); font-size: 0.75rem; }
-.events-filters :is(input, select) { min-width: 0; min-height: 48px; padding: 0.65rem; border: 1px solid var(--scene-border); border-radius: 0.25rem; color: var(--scene-text); background-color: var(--scene-bg); font-size: 0.85rem; color-scheme: dark; box-shadow: none; }
+.events-filters :is(input, select) { min-width: 0; min-height: 48px; padding: 0.65rem; border: 1px solid var(--scene-border); border-radius: 0; color: var(--scene-text); background-color: var(--scene-bg); font-size: 0.85rem; color-scheme: dark; box-shadow: none; }
 .events-filters input::placeholder { color: var(--scene-muted); opacity: 1; }
-:global([data-bs-theme='light']) .events-filters :is(input, select) { color-scheme: light; }
+[data-bs-theme='light'] .events-filters :is(input, select) { color-scheme: light; }
 .events-filter-note, .events-location-note { margin: 1rem 0 0; color: var(--scene-muted); font-size: 0.75rem; line-height: 1.7; }
 .events-location-note { flex-basis: 100%; margin: 0.25rem 0 0; }
 .events-filter-note .events-text-button { margin-left: 0.5rem; }

@@ -282,7 +282,7 @@ const team = [
   --about-text: #f3f0e9;
   --about-muted: #b4b6af;
   --about-line: #41443f;
-  --about-accent: #ed7059;
+  --about-accent: #ff5a1f;
   color: var(--about-text);
   background: var(--about-bg);
 }
@@ -292,7 +292,7 @@ const team = [
   --about-text: #242722;
   --about-muted: #5f625a;
   --about-line: #c8c9bf;
-  --about-accent: #ae3d29;
+  --about-accent: #c2410c;
 }
 .about-shell { padding-top: 2rem; padding-bottom: clamp(3rem, 6vw, 5rem); }
 .about-breadcrumb ol { display: flex; flex-wrap: wrap; gap: .6rem; padding: 0; margin: 0 0 2.5rem; list-style: none; color: var(--about-muted); font-size: .8rem; }

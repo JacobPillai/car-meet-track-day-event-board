@@ -69,7 +69,7 @@ const calendarOptions = computed(() => ({
   --calendar-text: #f4f2eb;
   --calendar-muted: #b3b5ac;
   --calendar-border: #343731;
-  --calendar-accent: #ff775f;
+  --calendar-accent: #ff5a1f;
   --calendar-today: #29201c;
   min-width: 0;
   padding: clamp(0.75rem, 2.5vw, 1.5rem);
@@ -84,7 +84,7 @@ const calendarOptions = computed(() => ({
   --calendar-text: #1c211d;
   --calendar-muted: #575e55;
   --calendar-border: #cdd0c6;
-  --calendar-accent: #a52e20;
+  --calendar-accent: #c2410c;
   --calendar-today: #f4e4dc;
 }
 
@@ -109,8 +109,8 @@ const calendarOptions = computed(() => ({
   --fc-button-border-color: var(--calendar-border);
   --fc-button-hover-bg-color: var(--calendar-surface);
   --fc-button-hover-border-color: var(--calendar-muted);
-  --fc-button-active-bg-color: #a52e20;
-  --fc-button-active-border-color: #a52e20;
+  --fc-button-active-bg-color: #c2410c;
+  --fc-button-active-border-color: #c2410c;
   font-family: inherit;
   font-size: 0.85rem;
 }
@@ -130,7 +130,7 @@ const calendarOptions = computed(() => ({
 .event-calendar :deep(.fc-button) {
   min-height: 44px;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.2rem;
+  border-radius: 0;
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: none;
@@ -162,7 +162,7 @@ const calendarOptions = computed(() => ({
 }
 
 .event-calendar :deep(.fc-daygrid-day-number) { padding: 0.5rem; }
-.event-calendar :deep(.fc-daygrid-event) { border-radius: 0.15rem; }
+.event-calendar :deep(.fc-daygrid-event) { border-radius: 0; }
 .event-calendar :deep(.fc-event) { cursor: pointer; }
 .event-calendar :deep(.fc-daygrid-dot-event:hover) { background: var(--calendar-surface); }
 .event-calendar :deep(.fc-daygrid-more-link) { color: var(--calendar-accent); }

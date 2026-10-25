@@ -184,7 +184,7 @@ function handlePinClick() {
   color: var(--apex-text-primary, #f8fafc);
   background: var(--apex-bg-surface, #11151f);
   border: 1px solid var(--apex-border-strong, #38404d);
-  border-radius: 0.75rem;
+  border-radius: 0;
 }
 
 .event-card__photo {
@@ -227,8 +227,8 @@ function handlePinClick() {
 
 .event-card__title {
   margin: 0;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-family: 'JetBrains Mono', ui-monospace, monospace; text-transform: uppercase;
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.025em;
@@ -278,7 +278,7 @@ function handlePinClick() {
   min-height: 44px;
   padding: 0.4rem 0.5rem;
   border: 1px solid transparent;
-  border-radius: 0.3rem;
+  border-radius: 0;
   color: inherit;
   background: transparent;
   font: inherit;
