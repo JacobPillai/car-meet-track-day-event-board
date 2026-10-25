@@ -57,6 +57,25 @@ function format_event_row($row, $is_authenticated) {
     return $row;
 }
 
+/**
+ * Only the owner of a row (or an admin) may change or delete it.
+ */
+function require_owner_or_admin($auth, $owner_column_value) {
+    if ($auth['role'] !== 'admin' && (int)$owner_column_value !== (int)$auth['id']) {
+        send_json(array('error' => 'Forbidden: you can only change your own content.'), 403);
+    }
+}
+
+function owner_of($pdo, $table, $column, $id) {
+    $stmt = $pdo->prepare('SELECT ' . $column . ' FROM ' . $table . ' WHERE id = ?');
+    $stmt->execute(array($id));
+    $val = $stmt->fetchColumn();
+    if ($val === false) {
+        send_json(array('error' => 'Not found.'), 404);
+    }
+    return $val;
+}
+
 // ============================================================================
 // 1. AUTH ENDPOINTS (/auth/register, /auth/login, /auth/me, /auth/profile)
 // ============================================================================
@@ -67,8 +86,14 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
     $role = isset($input['role']) && in_array($input['role'], array('member', 'organizer')) ? $input['role'] : 'member';
     $region = isset($input['region']) ? trim($input['region']) : 'Australia';
 
-    if (!$name || !$email || strlen($password) < 6) {
-        send_json(array('error' => 'Name, valid email, and password (min 6 chars) are required.'), 400);
+    if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 6 || strlen($password) > 72) {
+        send_json(array('error' => 'Name, valid email, and password (6-72 chars) are required.'), 400);
+    }
+    if (strlen($name) > 120 || strlen($email) > 191) {
+        send_json(array('error' => 'Name or email is too long.'), 400);
+    }
+    if (!in_array($region, array('Australia', 'Malaysia'), true)) {
+        $region = 'Australia';
     }
 
     $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
@@ -102,12 +127,29 @@ if ($endpoint === '/auth/login' && $method === 'POST') {
     $email = isset($input['email']) ? strtolower(trim($input['email'])) : '';
     $password = isset($input['password']) ? $input['password'] : '';
 
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    $window_start = date('Y-m-d H:i:s', time() - LOGIN_WINDOW_SECONDS);
+    $pdo->prepare('DELETE FROM login_attempts WHERE attempted_at < ?')->execute(array($window_start));
+    $count = $pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE email = ? AND ip = ? AND attempted_at >= ?');
+    $count->execute(array($email, $ip, $window_start));
+    if ((int)$count->fetchColumn() >= LOGIN_MAX_FAILURES) {
+        send_json(array('error' => 'Too many failed sign-ins. Try again in a few minutes.'), 429);
+    }
+
     $stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?');
     $stmt->execute(array($email));
     $user = $stmt->fetch();
 
     if (!$user || !apex_verify_password($password, $user['password_hash'])) {
+        $pdo->prepare('INSERT INTO login_attempts (email, ip, attempted_at) VALUES (?, ?, ?)')
+            ->execute(array($email, $ip, date('Y-m-d H:i:s')));
         send_json(array('error' => 'Invalid email or password.'), 401);
+    }
+    $pdo->prepare('DELETE FROM login_attempts WHERE email = ? AND ip = ?')->execute(array($email, $ip));
+
+    if (apex_password_needs_upgrade($user['password_hash'])) {
+        $pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+            ->execute(array(apex_hash_password($password), $user['id']));
     }
 
     unset($user['password_hash']);
@@ -139,6 +181,16 @@ if ($endpoint === '/auth/profile' && $method === 'PUT') {
     $region = isset($input['region']) ? trim($input['region']) : 'Australia';
     $bio = isset($input['bio']) ? trim($input['bio']) : '';
     $avatar = isset($input['avatar']) ? trim($input['avatar']) : '';
+
+    if (!$name || strlen($name) > 120) {
+        send_json(array('error' => 'Display name is required (max 120 chars).'), 400);
+    }
+    if (!in_array($region, array('Australia', 'Malaysia'), true)) {
+        $region = 'Australia';
+    }
+    if ($avatar !== '' && (!preg_match('#^https?://#i', $avatar) || strlen($avatar) > 255)) {
+        send_json(array('error' => 'Avatar must be an http(s) image URL (max 255 chars).'), 400);
+    }
 
     $stmt = $pdo->prepare('UPDATE users SET name = ?, region = ?, bio = ?, avatar = ? WHERE id = ?');
     $stmt->execute(array($name, $region, $bio, $avatar, $auth['id']));
@@ -308,6 +360,7 @@ if (preg_match('#^/events/(\d+)$#', $endpoint, $m)) {
 
     if ($method === 'PUT') {
         $auth = require_auth(array('organizer', 'admin'));
+        require_owner_or_admin($auth, owner_of($pdo, 'events', 'organizer_id', $event_id));
         $stmt = $pdo->prepare('UPDATE events SET title=?, description=?, category_id=?, club_id=?, region=?, venue=?, address=?, organizer_contact=?, latitude=?, longitude=?, start_datetime=?, end_datetime=?, price=?, capacity=?, image=?, status=? WHERE id=?');
         $stmt->execute(array(
             $input['title'],
@@ -333,6 +386,7 @@ if (preg_match('#^/events/(\d+)$#', $endpoint, $m)) {
 
     if ($method === 'DELETE') {
         $auth = require_auth(array('organizer', 'admin'));
+        require_owner_or_admin($auth, owner_of($pdo, 'events', 'organizer_id', $event_id));
         $stmt = $pdo->prepare('DELETE FROM events WHERE id = ?');
         $stmt->execute(array($event_id));
         send_json(array('message' => 'Event deleted successfully.'));
@@ -419,6 +473,7 @@ if (preg_match('#^/events/(\d+)/comments$#', $endpoint, $m)) {
 if (preg_match('#^/comments/(\d+)$#', $endpoint, $m) && $method === 'DELETE') {
     $auth = require_auth();
     $comment_id = (int)$m[1];
+    require_owner_or_admin($auth, owner_of($pdo, 'comments', 'user_id', $comment_id));
     $stmt = $pdo->prepare('DELETE FROM comments WHERE id = ?');
     $stmt->execute(array($comment_id));
     send_json(array('message' => 'Comment deleted.'));
@@ -467,6 +522,7 @@ if (preg_match('#^/clubs/(\d+)$#', $endpoint, $m)) {
     }
     if ($method === 'PUT') {
         $auth = require_auth(array('organizer', 'admin'));
+        require_owner_or_admin($auth, owner_of($pdo, 'clubs', 'owner_id', $club_id));
         $stmt = $pdo->prepare('UPDATE clubs SET name=?, description=?, logo=?, region=?, city=?, founded_year=? WHERE id=?');
         $stmt->execute(array(
             $input['name'],
@@ -481,6 +537,7 @@ if (preg_match('#^/clubs/(\d+)$#', $endpoint, $m)) {
     }
     if ($method === 'DELETE') {
         $auth = require_auth(array('organizer', 'admin'));
+        require_owner_or_admin($auth, owner_of($pdo, 'clubs', 'owner_id', $club_id));
         $stmt = $pdo->prepare('DELETE FROM clubs WHERE id = ?');
         $stmt->execute(array($club_id));
         send_json(array('message' => 'Club deleted.'));
@@ -511,7 +568,13 @@ if ($endpoint === '/admin/users' && $method === 'GET') {
 if (preg_match('#^/admin/users/(\d+)/role$#', $endpoint, $m) && $method === 'PUT') {
     $auth = require_auth(array('admin'));
     $user_id = (int)$m[1];
-    $role = isset($input['role']) ? $input['role'] : 'member';
+    $role = isset($input['role']) ? $input['role'] : '';
+    if (!in_array($role, array('member', 'organizer', 'admin'), true)) {
+        send_json(array('error' => 'Role must be member, organizer or admin.'), 400);
+    }
+    if ($user_id === (int)$auth['id'] && $role !== 'admin') {
+        send_json(array('error' => 'You cannot remove your own admin role.'), 400);
+    }
     $stmt = $pdo->prepare('UPDATE users SET role = ? WHERE id = ?');
     $stmt->execute(array($role, $user_id));
     send_json(array('message' => 'User role updated.'));
@@ -520,6 +583,9 @@ if (preg_match('#^/admin/users/(\d+)/role$#', $endpoint, $m) && $method === 'PUT
 if (preg_match('#^/admin/users/(\d+)$#', $endpoint, $m) && $method === 'DELETE') {
     $auth = require_auth(array('admin'));
     $user_id = (int)$m[1];
+    if ($user_id === (int)$auth['id']) {
+        send_json(array('error' => 'You cannot delete your own account here.'), 400);
+    }
     $stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
     $stmt->execute(array($user_id));
     send_json(array('message' => 'User deleted.'));

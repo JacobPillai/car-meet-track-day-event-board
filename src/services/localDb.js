@@ -257,7 +257,7 @@ export async function handleLocalRequest(method, endpoint, params = {}, body = {
     const password = String(body.password || '')
     const user = db.users.find((u) => u.email.toLowerCase() === email)
 
-    if (!user || (user.password !== password && password !== 'Password123!')) {
+    if (!user || user.password !== password) {
       const err = new Error('Invalid email or password.')
       err.status = 401
       throw err

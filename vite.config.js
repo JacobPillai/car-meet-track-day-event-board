@@ -8,7 +8,11 @@ export default defineConfig(({ command }) => ({
   base: command === 'build' ? './' : '/',
   server: {
     port: 5173,
-    host: true
+    host: true,
+    // Dev only: forward /api to PHP (php -S localhost:8000 -t .) so the app talks to MySQL
+    proxy: {
+      '/api': 'http://localhost:8000'
+    }
   },
   plugins: [
     vue(),

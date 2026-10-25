@@ -10,6 +10,7 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS login_attempts;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS event_likes;
 DROP TABLE IF EXISTS rsvps;
@@ -113,6 +114,15 @@ CREATE TABLE comments (
     created_at DATETIME NOT NULL,
     CONSTRAINT fk_comments_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- 8. Login Attempts Table (failed sign-in throttle)
+CREATE TABLE login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(191) NOT NULL,
+    ip VARCHAR(45) NOT NULL,
+    attempted_at DATETIME NOT NULL,
+    KEY idx_login_lookup (email, ip, attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

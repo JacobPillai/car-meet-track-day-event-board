@@ -17,13 +17,20 @@ function base64url_decode($data) {
     return base64_decode(strtr($data, '-_', '+/'));
 }
 
+function jwt_require_secret($secret) {
+    if (!is_string($secret) || strlen($secret) < 32) {
+        send_json(array('error' => 'Server is not configured: set JWT_SECRET (32+ random characters) in api/config.local.php.'), 500);
+    }
+}
+
 function jwt_encode($payload, $secret = JWT_SECRET) {
+    jwt_require_secret($secret);
     $header = array('typ' => 'JWT', 'alg' => 'HS256');
     if (!isset($payload['iat'])) {
         $payload['iat'] = time();
     }
     if (!isset($payload['exp'])) {
-        $payload['exp'] = time() + (60 * 60 * 24 * 7); // 7 days
+        $payload['exp'] = time() + (60 * 60 * 24); // 1 day
     }
     $segments = array();
     $segments[] = base64url_encode(json_encode($header));
@@ -35,8 +42,13 @@ function jwt_encode($payload, $secret = JWT_SECRET) {
 }
 
 function jwt_decode($token, $secret = JWT_SECRET) {
+    jwt_require_secret($secret);
     $parts = explode('.', $token);
     if (count($parts) !== 3) {
+        return null;
+    }
+    $header = json_decode(base64url_decode($parts[0]), true);
+    if (!is_array($header) || !isset($header['alg']) || $header['alg'] !== 'HS256') {
         return null;
     }
     $header_b64 = $parts[0];
@@ -46,7 +58,7 @@ function jwt_decode($token, $secret = JWT_SECRET) {
     $signing_input = $header_b64 . '.' . $payload_b64;
     $expected_sig = base64url_encode(hash_hmac('sha256', $signing_input, $secret, true));
 
-    if ($sig_b64 !== $expected_sig) {
+    if (!apex_safe_equals($sig_b64, $expected_sig)) {
         return null;
     }
 
@@ -54,7 +66,7 @@ function jwt_decode($token, $secret = JWT_SECRET) {
     if (!is_array($payload)) {
         return null;
     }
-    if (isset($payload['exp']) && $payload['exp'] < time()) {
+    if (!isset($payload['exp']) || $payload['exp'] < time()) {
         return null;
     }
     return $payload;
@@ -84,14 +96,33 @@ function get_bearer_token() {
 }
 
 /**
- * Returns decoded user payload or null if Guest
+ * Returns the signed-in user, or null for a Guest.
+ * The token only proves identity; role and existence are read fresh from the
+ * database, so a demoted or deleted account loses access straight away.
  */
 function get_authenticated_user() {
+    static $cached = false;
+    if ($cached !== false) {
+        return $cached;
+    }
+    $cached = null;
     $token = get_bearer_token();
     if (!$token) {
         return null;
     }
-    return jwt_decode($token);
+    $payload = jwt_decode($token);
+    if (!$payload || !isset($payload['id'])) {
+        return null;
+    }
+    $stmt = get_pdo()->prepare('SELECT id, name, email, role FROM users WHERE id = ?');
+    $stmt->execute(array((int)$payload['id']));
+    $row = $stmt->fetch();
+    if (!$row) {
+        return null;
+    }
+    $row['id'] = (int)$row['id'];
+    $cached = $row;
+    return $cached;
 }
 
 /**
@@ -102,7 +133,7 @@ function require_auth($allowed_roles = array()) {
     if (!$user) {
         send_json(array('error' => 'Authentication required. Please log in.'), 401);
     }
-    if (!empty($allowed_roles) && !in_array($user['role'], $allowed_roles)) {
+    if (!empty($allowed_roles) && !in_array($user['role'], $allowed_roles, true)) {
         send_json(array('error' => 'Forbidden: insufficient role permissions.'), 403);
     }
     return $user;
