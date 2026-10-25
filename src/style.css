@@ -3,45 +3,46 @@
    Typography: Space Grotesk (Display), Inter (UI), JetBrains Mono (Telemetry)
    ========================================================================== */
 
+/* Warm carbon + orange palette (from the Norvik sample design). Same names as before, new values. */
 :root,
 [data-bs-theme="dark"] {
-  --apex-bg-primary: #090b10;
-  --apex-bg-surface: #11151f;
-  --apex-bg-elevated: #171c29;
-  --apex-bg-glass: rgba(17, 21, 31, 0.82);
-  --apex-border: rgba(255, 255, 255, 0.09);
-  --apex-border-strong: rgba(255, 255, 255, 0.16);
-  --apex-red: #ff2a4b;
-  --apex-red-hover: #e01b3b;
-  --apex-red-glow: rgba(255, 42, 75, 0.28);
-  --apex-amber: #ff9f1c;
+  --apex-bg-primary: #101110;
+  --apex-bg-surface: #171917;
+  --apex-bg-elevated: #1f221f;
+  --apex-bg-glass: rgba(16, 17, 16, 0.88);
+  --apex-border: rgba(244, 242, 235, 0.12);
+  --apex-border-strong: rgba(244, 242, 235, 0.24);
+  --apex-red: #ff5a1f;
+  --apex-red-hover: #e84a10;
+  --apex-red-glow: rgba(255, 90, 31, 0.22);
+  --apex-on-accent: #101110;
+  --apex-amber: #ffb02e;
   --apex-cyan: #00f5d4;
-  --apex-text-primary: #f8fafc;
-  --apex-text-muted: #94a3b8;
-  --apex-card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  --apex-card-hover-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.75), 0 0 24px -4px rgba(255, 42, 75, 0.22);
-  --apex-hero-gradient: radial-gradient(circle at 82% 22%, rgba(255, 42, 75, 0.24) 0%, transparent 48%),
-    linear-gradient(135deg, rgba(9, 11, 16, 0.96) 0%, rgba(17, 21, 31, 0.88) 60%, rgba(23, 28, 41, 0.92) 100%);
+  --apex-text-primary: #f4f2eb;
+  --apex-text-muted: #b3b5ac;
+  --apex-card-shadow: none;
+  --apex-card-hover-shadow: 0 0 0 1px rgba(255, 90, 31, 0.6);
+  --apex-hero-gradient: linear-gradient(135deg, rgba(16, 17, 16, 0.96) 0%, rgba(23, 25, 23, 0.9) 100%);
 }
 
 [data-bs-theme="light"] {
-  --apex-bg-primary: #f1f5f9;
-  --apex-bg-surface: #ffffff;
-  --apex-bg-elevated: #f8fafc;
-  --apex-bg-glass: rgba(255, 255, 255, 0.88);
-  --apex-border: rgba(15, 23, 42, 0.1);
-  --apex-border-strong: rgba(15, 23, 42, 0.18);
-  --apex-red: #dc2626;
-  --apex-red-hover: #b91c1c;
-  --apex-red-glow: rgba(220, 38, 38, 0.18);
-  --apex-amber: #d97706;
+  --apex-bg-primary: #f7f6f2;
+  --apex-bg-surface: #fbfaf7;
+  --apex-bg-elevated: #eeeee7;
+  --apex-bg-glass: rgba(247, 246, 242, 0.9);
+  --apex-border: rgba(28, 33, 29, 0.16);
+  --apex-border-strong: rgba(28, 33, 29, 0.28);
+  --apex-red: #c2410c;
+  --apex-red-hover: #9a3412;
+  --apex-red-glow: rgba(194, 65, 12, 0.18);
+  --apex-on-accent: #ffffff;
+  --apex-amber: #b45309;
   --apex-cyan: #0891b2;
-  --apex-text-primary: #0f172a;
-  --apex-text-muted: #475569;
-  --apex-card-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  --apex-card-hover-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(220, 38, 38, 0.35);
-  --apex-hero-gradient: radial-gradient(circle at 80% 20%, rgba(220, 38, 38, 0.25) 0%, transparent 50%),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
+  --apex-text-primary: #1c211d;
+  --apex-text-muted: #575e55;
+  --apex-card-shadow: none;
+  --apex-card-hover-shadow: 0 0 0 1px rgba(194, 65, 12, 0.6);
+  --apex-hero-gradient: linear-gradient(135deg, rgba(28, 33, 29, 0.95) 0%, rgba(40, 46, 41, 0.9) 100%);
 }
 
 body {
@@ -101,7 +102,7 @@ code,
 .apex-card {
   background-color: var(--apex-bg-surface);
   border: 1px solid var(--apex-border);
-  border-radius: 1rem;
+  border-radius: 0;
   box-shadow: var(--apex-card-shadow);
   transition:
     transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
@@ -111,7 +112,7 @@ code,
 
 .apex-card-hover:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 42, 75, 0.5);
+  border-color: var(--apex-red);
   box-shadow: var(--apex-card-hover-shadow);
 }
 
@@ -169,33 +170,36 @@ code,
 }
 
 .apex-badge-accent {
-  background-color: rgba(255, 42, 75, 0.15);
-  color: #ff6b81;
-  border: 1px solid rgba(255, 42, 75, 0.38);
+  background-color: rgba(255, 90, 31, 0.14);
+  color: #ff8a57;
+  border: 1px solid rgba(255, 90, 31, 0.4);
   font-weight: 600;
 }
 
 [data-bs-theme="light"] .apex-badge-accent {
-  background-color: rgba(220, 38, 38, 0.1);
-  color: #b91c1c;
-  border: 1px solid rgba(220, 38, 38, 0.3);
+  background-color: rgba(194, 65, 12, 0.1);
+  color: #9a3412;
+  border: 1px solid rgba(194, 65, 12, 0.35);
 }
 
 .btn-apex {
-  background: linear-gradient(135deg, var(--apex-red) 0%, var(--apex-red-hover) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 4px 14px var(--apex-red-glow);
+  background: var(--apex-red);
+  border: 1px solid var(--apex-red);
+  border-radius: 0;
+  color: var(--apex-on-accent);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 .btn-apex:hover,
 .btn-apex:focus-visible {
-  color: #ffffff;
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px var(--apex-red-glow);
+  color: var(--apex-on-accent);
+  background: var(--apex-red-hover);
+  border-color: var(--apex-red-hover);
 }
 
 /* Ticket Date Badge on Event Cards */
@@ -341,12 +345,7 @@ textarea.user-valid-fallback {
   color: #10b981;
 }
 
-/* Mobile PWA Bottom Navigation Bar Clearance */
-@media (max-width: 991.98px) {
-  body {
-    padding-bottom: 68px;
-  }
-}
+/* Mobile dock clearance lives in Footer.vue (inside the footer), so no page-colour strip shows below it. */
 
 /* Leaflet map container sizing */
 .leaflet-container {
@@ -363,3 +362,78 @@ textarea:focus-visible {
   outline: 2px solid var(--apex-amber);
   outline-offset: 2px;
 }
+
+
+/* ==========================================================================
+   Shared page chrome ("apx-") used by redesigned pages (My events, Profile, ...)
+   ========================================================================== */
+.apx-page { padding-block: 2.5rem 4rem; }
+.apx-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.apx-eyebrow {
+  display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.9rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--apex-text-muted);
+}
+.apx-eyebrow::before { content: ''; flex: none; width: 6px; height: 6px; background: var(--apex-red); }
+.apx-title {
+  margin: 0 0 0.75rem; font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: clamp(1.7rem, 4.2vw, 3rem); font-weight: 700; line-height: 1.05;
+  letter-spacing: -0.055em; text-transform: uppercase; overflow-wrap: anywhere;
+}
+.apx-lede { max-width: 56ch; margin: 0; color: var(--apex-text-muted); font-size: 0.95rem; line-height: 1.7; }
+.apx-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.25rem 2rem; margin-bottom: 2rem; }
+.apx-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.apx-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 44px;
+  padding: 0.65rem 1.1rem; border: 1px solid var(--apex-border-strong); border-radius: 0;
+  background: transparent; color: var(--apex-text-primary); text-decoration: none; cursor: pointer;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.apx-btn:hover { border-color: var(--apex-red); color: var(--apex-red); }
+.apx-btn--primary { background: var(--apex-red); border-color: var(--apex-red); color: var(--apex-on-accent); }
+.apx-btn--primary:hover { background: var(--apex-red-hover); border-color: var(--apex-red-hover); color: var(--apex-on-accent); }
+.apx-btn--danger:hover { border-color: #dc2626; color: #dc2626; }
+.apx-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.apx-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.75rem; padding: 0; list-style: none; }
+.apx-tab {
+  display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; padding: 0.6rem 1rem;
+  border: 1px solid var(--apex-border-strong); border-radius: 0; background: transparent; color: var(--apex-text-primary);
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
+}
+.apx-tab:hover { border-color: var(--apex-red); }
+.apx-tab.is-active { background: var(--apex-red); border-color: var(--apex-red); color: var(--apex-on-accent); }
+
+.apx-panel { position: relative; padding: 1.5rem; border: 1px solid var(--apex-border-strong); border-radius: 0; background: var(--apex-bg-surface); }
+.apx-panel--accent { border-color: var(--apex-red); }
+.apx-panel--empty { padding: 3rem 1.5rem; text-align: center; }
+.apx-panel--empty i { display: block; margin-bottom: 0.75rem; font-size: 2rem; color: var(--apex-red); }
+.apx-panel h2, .apx-panel h3 { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: -0.03em; text-transform: uppercase; }
+.apx-panel p { color: var(--apex-text-muted); }
+.apx-tick::before, .apx-tick::after { content: ''; position: absolute; width: 5px; height: 5px; background: var(--apex-text-primary); }
+.apx-tick::before { top: -3px; left: -3px; }
+.apx-tick::after { right: -3px; bottom: -3px; }
+
+.apx-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.55rem; border: 1px solid var(--apex-border-strong);
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.apx-chip--accent { border-color: var(--apex-red); color: var(--apex-red); }
+.apx-chip--ok { border-color: #16a34a; color: #16a34a; }
+
+.apx-field { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.apx-field > label { font-size: 0.78rem; font-weight: 600; }
+.apx-field input, .apx-field select, .apx-field textarea {
+  width: 100%; min-width: 0; min-height: 48px; padding: 0.65rem 0.75rem; border: 1px solid var(--apex-border-strong); border-radius: 0;
+  background: var(--apex-bg-primary); color: var(--apex-text-primary); font: inherit; font-size: 0.9rem;
+}
+.apx-field textarea { min-height: 7rem; resize: vertical; }
+.apx-field input::placeholder, .apx-field textarea::placeholder { color: var(--apex-text-muted); opacity: 1; }
+.apx-field input:focus-visible, .apx-field select:focus-visible, .apx-field textarea:focus-visible { outline: 2px solid var(--apex-red); outline-offset: 2px; border-color: var(--apex-red); }
+.apx-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.apx-grid .is-wide { grid-column: 1 / -1; }
+@media (max-width: 767.98px) { .apx-grid { grid-template-columns: minmax(0, 1fr); } .apx-page { padding-block: 1.5rem 3rem; } }

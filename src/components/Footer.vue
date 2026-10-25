@@ -206,6 +206,10 @@ function handleExportDbSnapshot() {
 .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; padding-top: 1.25rem; color: var(--footer-muted); font-size: .75rem; }
 .footer-bottom p { margin: 0; }
 .site-footer :is(a, button):focus-visible { outline: 2px solid var(--footer-accent); outline-offset: 4px; }
+@media (max-width: 1199.98px) {
+  /* Clear the floating mobile dock inside the footer, so the footer colour runs to the bottom edge. */
+  .site-footer { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+}
 @media (max-width: 991px) {
   .footer-main { grid-template-columns: 1.2fr 1fr 1fr; gap: 1.75rem; }
   .footer-credit-columns { grid-template-columns: 1fr; gap: .5rem; }

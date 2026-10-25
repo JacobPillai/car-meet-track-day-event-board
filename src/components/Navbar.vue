@@ -250,8 +250,7 @@ onUnmounted(() => {
   .nav-account-name { max-width: 5rem; }
 }
 @media (max-width: 1199.98px) {
-  /* Reserve the floating dock and the device's bottom safe area without changing the footer. */
-  :global(body) { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+  /* The footer reserves room for this dock (see Footer.vue), so no strip of page background shows below it. */
   .site-header__inner { display: flex; justify-content: space-between; gap: 0.75rem; min-height: 76px; }
   .desktop-navigation, .desktop-auth { display: none; }
   .site-header__actions { gap: 0.15rem; }

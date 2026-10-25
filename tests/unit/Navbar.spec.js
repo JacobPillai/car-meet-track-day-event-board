@@ -529,12 +529,12 @@ describe('Navbar compiled responsive styles', () => {
     expect(code).toMatch(/--nav-text:\s*#1c211d/)
   })
 
-  it('compiles a global mobile body reserve and fixed safe-area-aware five-column dock', () => {
+  it('does not pad the body (the footer reserves the dock room) and keeps a fixed safe-area-aware five-column dock', () => {
     const { descriptor } = parse(navbarSource)
     const { code, errors } = compileStyle({ source: descriptor.styles[0].content, id: 'data-v-navbar-test', scoped: true })
     expect(errors).toEqual([])
     const mobileCss = code.slice(code.indexOf('@media (max-width: 1199.98px)'))
-    expect(mobileCss).toMatch(/body\s*\{\s*padding-bottom:\s*calc\(100px \+ env\(safe-area-inset-bottom, 0px\)\)/)
+    expect(mobileCss).not.toMatch(/body\s*\{[^}]*padding-bottom/)
     expect(mobileCss).not.toContain('body[data-v-navbar-test]')
     expect(mobileCss).toMatch(/\.mobile-dock\[data-v-navbar-test\]\s*\{[^}]*position:\s*fixed/)
     expect(mobileCss).toMatch(/bottom:\s*calc\(12px \+ env\(safe-area-inset-bottom, 0px\)\)/)
