@@ -83,11 +83,15 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
     $name = isset($input['name']) ? trim($input['name']) : '';
     $email = isset($input['email']) ? strtolower(trim($input['email'])) : '';
     $password = isset($input['password']) ? $input['password'] : '';
-    $role = isset($input['role']) && in_array($input['role'], array('member', 'organizer')) ? $input['role'] : 'member';
+    // Organizer access is granted by an admin unless ALLOW_ORGANIZER_SIGNUP is switched on.
+    $role = 'member';
+    if (isset($input['role']) && $input['role'] === 'organizer' && ALLOW_ORGANIZER_SIGNUP) {
+        $role = 'organizer';
+    }
     $region = isset($input['region']) ? trim($input['region']) : 'Australia';
 
-    if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 6 || strlen($password) > 72) {
-        send_json(array('error' => 'Name, valid email, and password (6-72 chars) are required.'), 400);
+    if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8 || strlen($password) > 72) {
+        send_json(array('error' => 'Name, valid email, and password (8-72 chars) are required.'), 400);
     }
     if (strlen($name) > 120 || strlen($email) > 191) {
         send_json(array('error' => 'Name or email is too long.'), 400);

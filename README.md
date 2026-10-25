@@ -54,6 +54,8 @@ npm run build
 
 ---
 
+> **Security update:** passwords are bcrypt, secrets live in `api/config.local.php`, and PHP mode never falls back to localStorage. Setup steps and the full list of fixes: [`docs/SECURITY_AND_CHANGES.md`](docs/SECURITY_AND_CHANGES.md).
+
 ## 3. Seeded Accounts & Role-Isolated Portals
 
 Password for all seeded accounts: **`Password123!`**
@@ -102,7 +104,7 @@ Each team member owns a distinct core layer and a **Vue-integrated advanced feat
 
 ---
 
-## 6. Database Schema (7 Tables) & REST API Specification
+## 6. Database Schema (8 Tables) & REST API Specification
 
 ### MySQL / MariaDB Tables (`database/schema.sql`)
 1. `users` (`id`, `name`, `email` UNIQUE, `password_hash`, `role` ENUM('member','organizer','admin'), `avatar`, `region`, `bio`, `created_at`)
@@ -112,6 +114,7 @@ Each team member owns a distinct core layer and a **Vue-integrated advanced feat
 5. `rsvps` (`id`, `event_id` FK, `user_id` FK, `status` ENUM('going','interested'), `created_at`, `UNIQUE(event_id, user_id)`)
 6. `event_likes` (`id`, `event_id` FK, `user_id` FK, `created_at`, `UNIQUE(event_id, user_id)`)
 7. `comments` (`id`, `event_id` FK, `user_id` FK, `body`, `rating` TINYINT NULL, `created_at`)
+8. `login_attempts` (`id`, `email`, `ip`, `attempted_at`) — failed-login throttle
 
 ### REST API Endpoints (`api/index.php` & `src/services/localDb.js`)
 - **Auth:** `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `PUT /auth/profile`
@@ -151,7 +154,7 @@ This section documents real issues encountered during development and testing, t
 - **Resolution:**
   - Engineered `api/config.php`, `api/jwt.php`, and `api/index.php` using strict **PHP 5.4–8.x cross-compatible syntax** (`isset($x) ? $x : $default`, `array(...)`).
   - Added `ini_set('memory_limit', '16M');` at the top of `api/config.php` as recommended by FeeNIX.
-  - Implemented a portable SHA-256 salted password helper (`apex_hash_password()` and `apex_verify_password()`) and a pure-PHP HMAC-SHA256 JWT encoder/decoder (`jwt.php`) with zero Composer dependencies.
+  - Implemented portable password helpers (`apex_hash_password()` / `apex_verify_password()`: bcrypt via `crypt()` with a `$2y$` salt when `password_hash()` is missing) and a pure-PHP HMAC-SHA256 JWT encoder/decoder (`jwt.php`) with zero Composer dependencies. See `docs/SECURITY_AND_CHANGES.md`.
 
 ### Issue #3: Swinburne FeeNIX MariaDB 5.5 Schema Limitations (`feenix-mariadb.swin.edu.au`)
 - **Symptom / Discovery:** FeeNIX runs **MariaDB 5.5**, which enforces two strict legacy limits compared to modern MySQL 8:
@@ -170,7 +173,7 @@ This section documents real issues encountered during development and testing, t
 ### Issue #5: Local Team Development Without Local XAMPP / MySQL Installed
 - **Symptom:** Team machines had Node.js (`v22.11.0`) installed for Vite, but did not have `php` or `mysql` installed in `PATH`—which would normally block frontend/QA teammates from testing API-driven pages locally.
 - **Resolution:**
-  - Built a **Dual-Mode API Architecture** (`src/services/api.js` + `src/services/localDb.js`). When running on Mercury (`mercury.swin.edu.au`) or when `VITE_USE_PHP_API=true` is set, requests hit `api/index.php`. During local `npm run dev` without PHP running, `api.js` transparently executes the exact same REST endpoints, JWT checks, Guest/Member masking, Haversine distance math, and pagination against a `localStorage`-backed relational database pre-loaded from `src/data/seedData.js`.
+  - Built a **Dual-Mode API Architecture** (`src/services/api.js` + `src/services/localDb.js`). When running on Mercury (`mercury.swin.edu.au`) or when `VITE_USE_PHP_API=true` is set, requests hit `api/index.php`. During plain local `npm run dev` (no `VITE_USE_PHP_API`), `api.js` executes the exact same REST endpoints, JWT checks, Guest/Member masking, Haversine distance math, and pagination against a `localStorage`-backed relational database pre-loaded from `src/data/seedData.js`.
 
 ### Issue #6: Leaflet Marker Icon Broken Images in Bundled Builds
 - **Symptom:** Standard Leaflet `L.marker()` default PNG icons often break after `vite build` when deployed to a subdirectory like Mercury because Vite rewrites asset paths.
@@ -194,7 +197,7 @@ This section documents real issues encountered during development and testing, t
 1. **Import the Database (`feenix-mariadb-web.swin.edu.au`):**
    - Connect to Swinburne VPN (if off-campus) and open `http://feenix-mariadb-web.swin.edu.au`.
    - Select your database (e.g., `s[StudentID]_db`) and import `database/schema.sql`, then `database/seed.sql`.
-   - Edit `api/config.php` and set `DB_NAME`, `DB_USER`, and `DB_PASS` to your FeeNIX MariaDB credentials.
+   - Create `api/config.local.php` on the server (copy `api/config.local.example.php`) with your FeeNIX credentials and a random `JWT_SECRET`. It is git-ignored, so create it by hand.
 2. **Build the Production Bundle:**
    - Run `npm run build` in `D:\ApexGrid`.
 3. **Upload via WinSCP / SFTP:**

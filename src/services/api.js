@@ -1,10 +1,10 @@
 /**
  * ApexGrid — Unified Dual-Mode REST API Client (Jacob's API Wiring Layer)
  *
- * Automatically connects to the Swinburne Mercury PHP REST API (`api/index.php?endpoint=...`)
- * when deployed on Mercury or when `VITE_API_URL` is configured, and seamlessly falls back
- * to the stateful local relational engine (`localDb.js`) during local Vite development
- * or offline PWA sessions.
+ * On Mercury, or when `VITE_USE_PHP_API=true`, every call goes to the PHP REST API
+ * (`api/index.php?endpoint=...`) and errors are shown, never hidden. Otherwise (plain local
+ * Vite development) the stateful local engine (`localDb.js`) stands in for the backend.
+ * Offline reads in PHP mode are served from the local engine.
  */
 
 import { handleLocalRequest } from './localDb'
@@ -42,47 +42,58 @@ function shouldAttemptPhpApi() {
   return host.includes('swin.edu.au') || host.includes('mercury')
 }
 
+function apiError(message, status) {
+  const err = new Error(message)
+  err.status = status
+  return err
+}
+
 async function request(method, endpoint, { params = {}, body = null } = {}) {
   const token = getStoredToken()
 
-  if (shouldAttemptPhpApi() && navigator.onLine) {
-    try {
-      const baseUrl = (import.meta.env && import.meta.env.VITE_API_BASE_URL) || './api/index.php'
-      const url = new URL(baseUrl, window.location.href)
-      url.searchParams.set('endpoint', endpoint)
-      Object.entries(params).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && v !== '') {
-          url.searchParams.set(k, String(v))
-        }
-      })
+  // PHP mode (Mercury, or VITE_USE_PHP_API=true) is strict: MySQL is the only source of truth.
+  // We never quietly fall back to localStorage, because the demo would look fine while
+  // nothing reached the database.
+  if (shouldAttemptPhpApi()) {
+    if (!navigator.onLine) {
+      if (method === 'GET') return handleLocalRequest(method, endpoint, params, {}, token)
+      throw apiError('You are offline. Reconnect to save changes.', 503)
+    }
 
-      const headers = { 'Content-Type': 'application/json' }
-      if (token) {
-        headers.Authorization = `Bearer ${token}`
+    const baseUrl = (import.meta.env && import.meta.env.VITE_API_BASE_URL) || './api/index.php'
+    const url = new URL(baseUrl, window.location.href)
+    url.searchParams.set('endpoint', endpoint)
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') {
+        url.searchParams.set(k, String(v))
       }
+    })
 
-      const res = await fetch(url.toString(), {
+    const headers = { 'Content-Type': 'application/json' }
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
+    let res
+    try {
+      res = await fetch(url.toString(), {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined
       })
-
-      const contentType = res.headers.get('content-type') || ''
-      if (contentType.includes('application/json')) {
-        const data = await res.json()
-        if (!res.ok) {
-          const err = new Error(data.error || data.message || `API Error (${res.status})`)
-          err.status = res.status
-          throw err
-        }
-        return data
-      }
-    } catch (err) {
-      if (err.status && err.status !== 503) {
-        throw err
-      }
-      console.info('[ApexGrid API] PHP endpoint unreachable, using stateful local DB engine.')
+    } catch {
+      throw apiError('Cannot reach the ApexGrid server. Please try again.', 503)
     }
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      throw apiError('The server sent an unexpected response. Check the PHP API setup.', 502)
+    }
+    const data = await res.json()
+    if (!res.ok) {
+      throw apiError(data.error || data.message || `API Error (${res.status})`, res.status)
+    }
+    return data
   }
 
   return handleLocalRequest(method, endpoint, params, body || {}, token)

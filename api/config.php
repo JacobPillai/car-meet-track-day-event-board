@@ -23,6 +23,8 @@ if (!defined('DB_PASS')) define('DB_PASS', getenv('APEX_DB_PASS') ? getenv('APEX
 if (!defined('JWT_SECRET')) define('JWT_SECRET', getenv('APEX_JWT_SECRET') ? getenv('APEX_JWT_SECRET') : '');
 // Comma separated browser origins allowed to call the API cross-site (same-origin needs none).
 if (!defined('ALLOWED_ORIGINS')) define('ALLOWED_ORIGINS', getenv('APEX_ALLOWED_ORIGINS') ? getenv('APEX_ALLOWED_ORIGINS') : 'http://localhost:5173,http://127.0.0.1:5173');
+// Let people pick the Organizer role at sign-up. Off = everyone starts as a Member and an admin promotes them.
+if (!defined('ALLOW_ORGANIZER_SIGNUP')) define('ALLOW_ORGANIZER_SIGNUP', false);
 // Login throttle: lock an email/IP pair after this many failures inside the window.
 if (!defined('LOGIN_MAX_FAILURES')) define('LOGIN_MAX_FAILURES', 5);
 if (!defined('LOGIN_WINDOW_SECONDS')) define('LOGIN_WINDOW_SECONDS', 900);

@@ -220,8 +220,8 @@ export async function handleLocalRequest(method, endpoint, params = {}, body = {
     const role = ['member', 'organizer'].includes(body.role) ? body.role : 'member'
     const region = body.region || 'Australia'
 
-    if (!name || !email || password.length < 6) {
-      const err = new Error('Name, valid email, and password (min 6 characters) are required.')
+    if (!name || !email || password.length < 8) {
+      const err = new Error('Name, valid email, and password (min 8 characters) are required.')
       err.status = 400
       throw err
     }

@@ -11,3 +11,5 @@ define('DB_PASS', '');
 define('JWT_SECRET', '');
 // Browser origins allowed to call the API cross-site (same-origin needs none)
 define('ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173');
+// true = Organizer can be chosen at sign-up. false = admin promotes (safer).
+define('ALLOW_ORGANIZER_SIGNUP', false);

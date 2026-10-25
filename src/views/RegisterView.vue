@@ -52,6 +52,9 @@ async function handleRegister() {
     if (disposed) return
     completed.value = true
     showToast(`Account created! Welcome to ApexGrid, ${user.name}.`, 'success')
+    if (form.role === 'organizer' && user.role !== 'organizer') {
+      showToast('Organizer access needs admin approval. You are signed in as a Member for now.', 'info', 6000)
+    }
     router.push(authStore.roleHomeRoute)
   } catch (err) {
     if (disposed) return
