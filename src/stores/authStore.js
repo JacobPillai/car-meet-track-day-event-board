@@ -92,6 +92,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loginWithOAuth(payload) {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await api.post('/auth/oauth', payload)
+      token.value = res.token
+      user.value = res.user
+      setStoredToken(res.token)
+      savePersistedUser(res.user)
+      return res
+    } catch (err) {
+      error.value = err.message || 'OAuth authentication failed.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function updateProfile(payload) {
     loading.value = true
     error.value = null
@@ -145,6 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
     roleHomeRoute,
     login,
     register,
+    loginWithOAuth,
     updateProfile,
     refreshSession,
     logout

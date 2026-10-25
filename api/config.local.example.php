@@ -13,3 +13,6 @@ define('JWT_SECRET', '');
 define('ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173');
 // true = Organizer can be chosen at sign-up. false = admin promotes (safer).
 define('ALLOW_ORGANIZER_SIGNUP', false);
+// Social sign-in: 'off' | 'google' (real, verified) | 'demo' (simulated buttons, never for admins)
+define('OAUTH_MODE', 'off');
+define('GOOGLE_CLIENT_ID', '');

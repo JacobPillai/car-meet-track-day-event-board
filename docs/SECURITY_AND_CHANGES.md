@@ -36,8 +36,22 @@ If `JWT_SECRET` is missing or short the API answers `500 Server is not configure
 | 11 | Anyone could sign up as Organizer | Off by default: everyone starts as Member and an admin promotes them (`ALLOW_ORGANIZER_SIGNUP`). The form shows a notice | `api/config.php`, `api/index.php`, `RegisterView.vue` |
 | 12 | App silently used localStorage when PHP failed, so data never reached MySQL | In PHP mode (Mercury or `VITE_USE_PHP_API=true`) errors are shown. Only offline GETs read the local copy. 4 new tests | `src/services/api.js`, `tests/unit/api.spec.js` |
 | 13 | Password minimum 6 on server but 8 in the form | Server and local engine now require 8 | `api/index.php`, `localDb.js` |
+| 14 | **Teammate's `/auth/oauth` endpoint (merged from main) let anyone sign in as any account**, including admin, by posting that email (no provider check) | Off by default (`OAUTH_MODE`). `google` mode checks the id_token with Google and your `GOOGLE_CLIENT_ID`. `demo` mode (the simulated buttons) never signs into admins, only creates Members, and social accounts get an unguessable password | `api/index.php`, `api/config.php` |
 
-## 3. Known limits (accepted)
+## 3. Social sign-in (OAuth) settings
+
+Set in `api/config.local.php`:
+
+| `OAUTH_MODE` | Meaning |
+|---|---|
+| `'off'` (default) | `/auth/oauth` answers 501. The social buttons will show an error against PHP. |
+| `'demo'` | The simulated Google/GitHub/Discord buttons work for the classroom demo. Admin accounts are refused. Use only for the demo. |
+| `'google'` | Real Google sign-in. Needs `GOOGLE_CLIENT_ID`. The server verifies the id_token with Google. |
+
+For the Mercury demo video use `'demo'`, and switch back to `'off'` afterwards.
+With plain `npm run dev` (no PHP) the browser-only engine simulates it, same as before.
+
+## 4. Known limits (accepted)
 
 - **Local mode is a demo stand-in.** With plain `npm run dev` (no PHP) the "database" and tokens live in the browser's `localStorage`. Tokens there are not signed. It is for UI work only and never runs on Mercury.
 - **Login throttle is per email + IP**, so a shared school network can share a lockout. The window is short (15 minutes).
@@ -45,10 +59,10 @@ If `JWT_SECRET` is missing or short the API answers `500 Server is not configure
 - **Seed accounts all share `Password123!`.** Change them before any public deployment.
 - Rotate any key you pasted into a screenshot or chat (EmailJS private key, testmail key).
 
-## 4. Responsive check
+## 5. Responsive check
 
 Loaded at 375, 768 and 1366 px (public pages plus logged-in admin, dashboard, event form): no horizontal scroll. Phone layout uses the hamburger menu and a bottom nav bar, and the footer stacks into one column.
 
-## 5. Tests
+## 6. Tests
 
-`npm test` runs 296 tests (292 existing + 4 for the strict API client).
+`npm test` runs 297 tests (including 4 for the strict API client).

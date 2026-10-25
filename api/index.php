@@ -77,7 +77,7 @@ function owner_of($pdo, $table, $column, $id) {
 }
 
 // ============================================================================
-// 1. AUTH ENDPOINTS (/auth/register, /auth/login, /auth/me, /auth/profile)
+// 1. AUTH ENDPOINTS (/auth/register, /auth/login, /auth/oauth, /auth/me, /auth/profile)
 // ============================================================================
 if ($endpoint === '/auth/register' && $method === 'POST') {
     $name = isset($input['name']) ? trim($input['name']) : '';
@@ -89,6 +89,8 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
         $role = 'organizer';
     }
     $region = isset($input['region']) ? trim($input['region']) : 'Australia';
+    $vehicle = isset($input['vehicle']) ? substr(trim($input['vehicle']), 0, 150) : null;
+    $bio = isset($input['bio']) && trim($input['bio']) !== '' ? trim($input['bio']) : 'Enthusiast member on ApexGrid.';
 
     if (!$name || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8 || strlen($password) > 72) {
         send_json(array('error' => 'Name, valid email, and password (8-72 chars) are required.'), 400);
@@ -110,8 +112,8 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
     $now = date('Y-m-d H:i:s');
     $avatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80';
 
-    $ins = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, avatar, region, bio, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    $ins->execute(array($name, $email, $hash, $role, $avatar, $region, 'Enthusiast member on ApexGrid.', $now));
+    $ins = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $ins->execute(array($name, $email, $hash, $role, null, null, $vehicle, $avatar, $region, $bio, $now));
     $user_id = (int)$pdo->lastInsertId();
 
     $user_data = array(
@@ -119,9 +121,12 @@ if ($endpoint === '/auth/register' && $method === 'POST') {
         'name' => $name,
         'email' => $email,
         'role' => $role,
+        'oauth_provider' => null,
+        'oauth_id' => null,
+        'vehicle' => $vehicle,
         'avatar' => $avatar,
         'region' => $region,
-        'bio' => 'Enthusiast member on ApexGrid.'
+        'bio' => $bio
     );
     $token = jwt_encode(array('id' => $user_id, 'email' => $email, 'role' => $role, 'name' => $name));
     send_json(array('token' => $token, 'user' => $user_data), 201);
@@ -167,9 +172,132 @@ if ($endpoint === '/auth/login' && $method === 'POST') {
     send_json(array('token' => $token, 'user' => $user));
 }
 
+/**
+ * Check a Google id_token with Google itself (never trust a token the browser decoded).
+ * Returns array(email, name, sub, picture) or null.
+ */
+function verify_google_id_token($id_token) {
+    if (!defined('GOOGLE_CLIENT_ID') || GOOGLE_CLIENT_ID === '' || !is_string($id_token) || $id_token === '') {
+        return null;
+    }
+    $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($id_token);
+    $ctx = stream_context_create(array('http' => array('timeout' => 5, 'ignore_errors' => true)));
+    $raw = @file_get_contents($url, false, $ctx);
+    $info = $raw ? json_decode($raw, true) : null;
+    if (!is_array($info) || !isset($info['aud']) || $info['aud'] !== GOOGLE_CLIENT_ID) {
+        return null;
+    }
+    if (!isset($info['email_verified']) || ($info['email_verified'] !== 'true' && $info['email_verified'] !== true)) {
+        return null;
+    }
+    if (empty($info['email']) || empty($info['sub'])) {
+        return null;
+    }
+    return array(
+        'email' => strtolower($info['email']),
+        'name' => isset($info['name']) ? $info['name'] : $info['email'],
+        'sub' => $info['sub'],
+        'picture' => isset($info['picture']) ? $info['picture'] : ''
+    );
+}
+
+/**
+ * OAUTH_MODE (config.local.php):
+ *   'off'    (default) endpoint disabled
+ *   'google' real Google sign-in: id_token verified with Google, GOOGLE_CLIENT_ID required
+ *   'demo'   the simulated provider buttons for classroom demos. Anyone can claim a
+ *            profile, so it never signs into admin accounts and only creates Members.
+ */
+if ($endpoint === '/auth/oauth' && $method === 'POST') {
+    $mode = defined('OAUTH_MODE') ? OAUTH_MODE : 'off';
+    if ($mode !== 'google' && $mode !== 'demo') {
+        send_json(array('error' => 'OAuth sign-in is not enabled on this server.'), 501);
+    }
+
+    $provider = isset($input['provider']) ? strtolower(trim($input['provider'])) : 'google';
+    if (!in_array($provider, array('google', 'github', 'discord'), true)) {
+        $provider = 'google';
+    }
+
+    $avatar = '';
+    if ($mode === 'google') {
+        $verified = verify_google_id_token(isset($input['id_token']) ? $input['id_token'] : '');
+        if (!$verified) {
+            send_json(array('error' => 'Google sign-in could not be verified.'), 401);
+        }
+        $provider = 'google';
+        $email = $verified['email'];
+        $name = $verified['name'];
+        $oauth_id = $verified['sub'];
+        $avatar = $verified['picture'];
+    } else {
+        $email = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+        $name = isset($input['name']) ? trim($input['name']) : '';
+        $oauth_id = isset($input['oauth_id']) ? trim($input['oauth_id']) : ($provider . '_' . md5($email));
+        $avatar = isset($input['avatar']) ? trim($input['avatar']) : '';
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !$name || strlen($name) > 120 || strlen($oauth_id) > 191) {
+        send_json(array('error' => 'OAuth provider email and display name are required.'), 400);
+    }
+    if ($avatar === '' || !preg_match('#^https?://#i', $avatar) || strlen($avatar) > 255) {
+        $avatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80';
+    }
+    $region = isset($input['region']) && in_array($input['region'], array('Australia', 'Malaysia'), true) ? $input['region'] : 'Australia';
+    $vehicle = isset($input['vehicle']) ? substr(trim($input['vehicle']), 0, 150) : null;
+    $role = 'member';
+    if (isset($input['role']) && $input['role'] === 'organizer' && ALLOW_ORGANIZER_SIGNUP) {
+        $role = 'organizer';
+    }
+
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?');
+    $stmt->execute(array($email));
+    $existing = $stmt->fetch();
+
+    if ($existing) {
+        if ($mode === 'demo' && $existing['role'] === 'admin') {
+            send_json(array('error' => 'Admin accounts cannot use demo OAuth. Sign in with your password.'), 403);
+        }
+        $upd = $pdo->prepare('UPDATE users SET oauth_provider = ?, oauth_id = ? WHERE id = ?');
+        $upd->execute(array($provider, $oauth_id, $existing['id']));
+        $existing['oauth_provider'] = $provider;
+        $existing['oauth_id'] = $oauth_id;
+        unset($existing['password_hash']);
+        $existing['id'] = (int)$existing['id'];
+
+        $token = jwt_encode(array('id' => $existing['id'], 'email' => $existing['email'], 'role' => $existing['role'], 'name' => $existing['name']));
+        send_json(array('token' => $token, 'user' => $existing, 'is_new_user' => false));
+    }
+
+    $now = date('Y-m-d H:i:s');
+    // Social accounts get an unguessable password, so they can only sign in through the provider.
+    $hash = apex_hash_password(bin2hex(apex_random_bytes(24)));
+    $bio = 'Authenticated via ' . ucfirst($provider) . ' OAuth 2.0 on ApexGrid.';
+
+    $ins = $pdo->prepare('INSERT INTO users (name, email, password_hash, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $ins->execute(array($name, $email, $hash, $role, $provider, $oauth_id, $vehicle, $avatar, $region, $bio, $now));
+    $user_id = (int)$pdo->lastInsertId();
+
+    $user_data = array(
+        'id' => $user_id,
+        'name' => $name,
+        'email' => $email,
+        'role' => $role,
+        'oauth_provider' => $provider,
+        'oauth_id' => $oauth_id,
+        'vehicle' => $vehicle,
+        'avatar' => $avatar,
+        'region' => $region,
+        'bio' => $bio,
+        'created_at' => $now
+    );
+    $token = jwt_encode(array('id' => $user_id, 'email' => $email, 'role' => $role, 'name' => $name));
+    send_json(array('token' => $token, 'user' => $user_data, 'is_new_user' => true), 201);
+}
+
 if ($endpoint === '/auth/me' && $method === 'GET') {
     $auth = require_auth();
-    $stmt = $pdo->prepare('SELECT id, name, email, role, avatar, region, bio, created_at FROM users WHERE id = ?');
+    $stmt = $pdo->prepare('SELECT id, name, email, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at FROM users WHERE id = ?');
     $stmt->execute(array($auth['id']));
     $user = $stmt->fetch();
     if (!$user) {
@@ -183,6 +311,7 @@ if ($endpoint === '/auth/profile' && $method === 'PUT') {
     $auth = require_auth();
     $name = isset($input['name']) ? trim($input['name']) : '';
     $region = isset($input['region']) ? trim($input['region']) : 'Australia';
+    $vehicle = isset($input['vehicle']) ? trim($input['vehicle']) : null;
     $bio = isset($input['bio']) ? trim($input['bio']) : '';
     $avatar = isset($input['avatar']) ? trim($input['avatar']) : '';
 
@@ -195,11 +324,14 @@ if ($endpoint === '/auth/profile' && $method === 'PUT') {
     if ($avatar !== '' && (!preg_match('#^https?://#i', $avatar) || strlen($avatar) > 255)) {
         send_json(array('error' => 'Avatar must be an http(s) image URL (max 255 chars).'), 400);
     }
+    if ($vehicle !== null && strlen($vehicle) > 150) {
+        send_json(array('error' => 'Vehicle is too long (max 150 chars).'), 400);
+    }
 
-    $stmt = $pdo->prepare('UPDATE users SET name = ?, region = ?, bio = ?, avatar = ? WHERE id = ?');
-    $stmt->execute(array($name, $region, $bio, $avatar, $auth['id']));
+    $stmt = $pdo->prepare('UPDATE users SET name = ?, region = ?, vehicle = ?, bio = ?, avatar = ? WHERE id = ?');
+    $stmt->execute(array($name, $region, $vehicle, $bio, $avatar, $auth['id']));
 
-    $sel = $pdo->prepare('SELECT id, name, email, role, avatar, region, bio, created_at FROM users WHERE id = ?');
+    $sel = $pdo->prepare('SELECT id, name, email, role, oauth_provider, oauth_id, vehicle, avatar, region, bio, created_at FROM users WHERE id = ?');
     $sel->execute(array($auth['id']));
     $updated = $sel->fetch();
     $updated['id'] = (int)$updated['id'];

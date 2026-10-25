@@ -25,6 +25,9 @@ if (!defined('JWT_SECRET')) define('JWT_SECRET', getenv('APEX_JWT_SECRET') ? get
 if (!defined('ALLOWED_ORIGINS')) define('ALLOWED_ORIGINS', getenv('APEX_ALLOWED_ORIGINS') ? getenv('APEX_ALLOWED_ORIGINS') : 'http://localhost:5173,http://127.0.0.1:5173');
 // Let people pick the Organizer role at sign-up. Off = everyone starts as a Member and an admin promotes them.
 if (!defined('ALLOW_ORGANIZER_SIGNUP')) define('ALLOW_ORGANIZER_SIGNUP', false);
+// Social sign-in: 'off' | 'google' (verified with Google, needs GOOGLE_CLIENT_ID) | 'demo' (simulated buttons, classroom use only).
+if (!defined('OAUTH_MODE')) define('OAUTH_MODE', getenv('APEX_OAUTH_MODE') ? getenv('APEX_OAUTH_MODE') : 'off');
+if (!defined('GOOGLE_CLIENT_ID')) define('GOOGLE_CLIENT_ID', getenv('APEX_GOOGLE_CLIENT_ID') ? getenv('APEX_GOOGLE_CLIENT_ID') : '');
 // Login throttle: lock an email/IP pair after this many failures inside the window.
 if (!defined('LOGIN_MAX_FAILURES')) define('LOGIN_MAX_FAILURES', 5);
 if (!defined('LOGIN_WINDOW_SECONDS')) define('LOGIN_WINDOW_SECONDS', 900);

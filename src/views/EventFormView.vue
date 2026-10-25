@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../services/api'
+import { searchVenueGeocode, reverseGeocodeCoords } from '../services/externalApis'
 import { VENUE_PRESETS } from '../data/seedData'
 import EventMap from '../components/EventMap.vue'
 
@@ -13,6 +14,10 @@ const categories = ref([])
 const clubs = ref([])
 const loading = ref(false)
 const error = ref('')
+const geocodeQuery = ref('')
+const geocodeResults = ref([])
+const geocoding = ref(false)
+const geocodeStatus = ref('')
 
 const form = reactive({
   title: '',
@@ -62,9 +67,44 @@ function applyVenuePreset(event) {
   form.longitude = preset.longitude
 }
 
-function handleMapPickCoords({ latitude, longitude }) {
+async function handleMapPickCoords({ latitude, longitude }) {
   form.latitude = latitude
   form.longitude = longitude
+  geocodeStatus.value = 'Resolving street address via Nominatim Reverse Geocoding API…'
+  const rev = await reverseGeocodeCoords(latitude, longitude)
+  if (rev) {
+    if (!form.venue) form.venue = rev.venue
+    form.address = rev.address
+    form.region = rev.region
+    geocodeStatus.value = `Resolved via ${rev.source}`
+  } else {
+    geocodeStatus.value = `Coordinates updated (${latitude}, ${longitude})`
+  }
+}
+
+async function handleNominatimSearch() {
+  if (!geocodeQuery.value.trim()) return
+  geocoding.value = true
+  geocodeStatus.value = ''
+  try {
+    const results = await searchVenueGeocode(geocodeQuery.value, form.region)
+    geocodeResults.value = results
+    geocodeStatus.value = results.length
+      ? `Found ${results.length} venue(s) via Nominatim OpenStreetMap REST API.`
+      : 'No Nominatim matches found — try a broader suburb or circuit name.'
+  } finally {
+    geocoding.value = false
+  }
+}
+
+function selectGeocodeResult(item) {
+  form.venue = item.venue
+  form.address = item.address
+  form.latitude = item.latitude
+  form.longitude = item.longitude
+  form.region = item.region
+  geocodeResults.value = []
+  geocodeStatus.value = `Applied "${item.venue}" from ${item.source}.`
 }
 
 function toDatetimeLocal(sqlStr) {
@@ -313,6 +353,46 @@ onMounted(async () => {
       <div class="col-12 col-lg-5">
         <div class="apex-card p-4 h-100 d-flex flex-column">
           <h2 class="h5 fw-bold mb-3">2. Circuit / Venue &amp; Member-Only Details</h2>
+
+          <div class="mb-3 p-2 rounded border border-secondary bg-dark bg-opacity-25">
+            <label for="nominatim-search" class="form-label small fw-semibold text-info mb-1">
+              <i class="bi bi-globe2 me-1" aria-hidden="true"></i>
+              Live Venue &amp; Address Search (Nominatim OSM REST API)
+            </label>
+            <div class="input-group input-group-sm">
+              <input
+                id="nominatim-search"
+                v-model="geocodeQuery"
+                type="search"
+                class="form-control"
+                placeholder="Search circuit or suburb (e.g. Sandown, Sepang, Docklands)..."
+                @keydown.enter.prevent="handleNominatimSearch"
+              />
+              <button
+                type="button"
+                class="btn btn-outline-info"
+                :disabled="geocoding"
+                @click="handleNominatimSearch"
+              >
+                {{ geocoding ? 'Searching…' : 'Geocode' }}
+              </button>
+            </div>
+            <div v-if="geocodeStatus" class="small text-body-secondary mt-1 font-monospace">
+              {{ geocodeStatus }}
+            </div>
+            <ul v-if="geocodeResults.length" class="list-group list-group-flush mt-2 small">
+              <li
+                v-for="(item, gIdx) in geocodeResults"
+                :key="gIdx"
+                class="list-group-item list-group-item-action bg-transparent text-light border-secondary py-1 px-2"
+                style="cursor: pointer"
+                @click="selectGeocodeResult(item)"
+              >
+                <div class="fw-bold text-warning">{{ item.venue }} ({{ item.region }})</div>
+                <div class="text-body-secondary text-truncate">{{ item.address }}</div>
+              </li>
+            </ul>
+          </div>
 
           <div class="mb-3">
             <label for="venue-preset" class="form-label small fw-semibold text-warning">

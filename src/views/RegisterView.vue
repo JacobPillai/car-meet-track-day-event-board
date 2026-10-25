@@ -3,6 +3,8 @@ import { computed, nextTick, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useToast } from '../composables/useToast'
+import OAuthSocialPanel from '../components/OAuthSocialPanel.vue'
+import { POPULAR_VEHICLE_MAKES, fetchVehicleModelsForMake } from '../services/externalApis'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -17,6 +19,47 @@ const form = reactive({
   region: 'Australia',
   bio: ''
 })
+
+const showVehicleLookup = ref(false)
+const vehicleMake = ref('Honda')
+const vehicleModel = ref('Civic Type R (FL5)')
+const vehicleYear = ref('2023')
+const vehicleModels = ref([])
+const vehicleApiSource = ref('')
+const loadingModels = ref(false)
+
+async function toggleVehicleLookup() {
+  showVehicleLookup.value = !showVehicleLookup.value
+  if (showVehicleLookup.value && !vehicleModels.value.length) {
+    await loadModelsForMake(vehicleMake.value)
+  }
+}
+
+async function loadModelsForMake(make) {
+  if (!make) {
+    vehicleModels.value = []
+    return
+  }
+  loadingModels.value = true
+  try {
+    const res = await fetchVehicleModelsForMake(make)
+    if (!disposed) {
+      vehicleModels.value = res.models || []
+      vehicleApiSource.value = res.source || 'NHTSA vPIC REST API'
+      if (vehicleModels.value.length && !vehicleModels.value.includes(vehicleModel.value)) {
+        vehicleModel.value = vehicleModels.value[0]
+      }
+    }
+  } finally {
+    if (!disposed) loadingModels.value = false
+  }
+}
+
+function applyVehicleToBio() {
+  const spec = `${vehicleYear.value || '2023'} ${vehicleMake.value} ${vehicleModel.value}`.trim()
+  form.bio = form.bio ? `${spec} — ${form.bio}` : spec
+  showToast(`Added ${spec} from NHTSA vPIC API`, 'info', 2200)
+}
 
 const submissionError = ref('')
 const pending = ref(false)
@@ -65,6 +108,12 @@ async function handleRegister() {
     if (!disposed) pending.value = false
   }
 }
+
+function handleOAuthRegistered() {
+  if (disposed) return
+  completed.value = true
+  router.push(authStore.roleHomeRoute)
+}
 </script>
 
 <template>
@@ -90,6 +139,14 @@ async function handleRegister() {
             <h2 id="register-heading">Create your account</h2>
             <p>Choose how you’ll take part. All fields are required unless marked optional.</p>
           </div>
+
+          <OAuthSocialPanel
+            mode="register"
+            :default-role="form.role"
+            :default-region="form.region"
+            :disabled="busy"
+            @authenticated="handleOAuthRegistered"
+          />
 
           <form :aria-busy="busy" @submit.prevent="handleRegister">
             <div
@@ -176,8 +233,54 @@ async function handleRegister() {
                 </div>
 
                 <div class="auth-field auth-full-width">
-                  <label for="reg-bio">Car build / about you <span class="auth-optional">(optional)</span></label>
+                  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <label for="reg-bio">Car build / about you <span class="auth-optional">(optional)</span></label>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-link p-0 text-decoration-none small"
+                      style="color: var(--auth-accent); font-size: 0.75rem"
+                      @click="toggleVehicleLookup"
+                    >
+                      <i class="bi bi-car-front me-1" aria-hidden="true"></i>
+                      {{ showVehicleLookup ? 'Hide NHTSA Vehicle API Lookup' : 'Lookup car via NHTSA vPIC API' }}
+                    </button>
+                  </div>
                   <span id="reg-bio-hint" class="auth-hint">Tell the community a little about your car or interests.</span>
+                  <div v-if="showVehicleLookup" class="p-2 mb-1 border border-secondary rounded bg-dark bg-opacity-25">
+                    <div class="small text-warning mb-2 font-monospace" style="font-size: 0.72rem">
+                      {{ vehicleApiSource || 'NHTSA vPIC Vehicle Specifications REST API' }}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                      <select
+                        v-model="vehicleMake"
+                        aria-label="Vehicle Make"
+                        style="flex: 1; min-height: 38px"
+                        @change="loadModelsForMake(vehicleMake)"
+                      >
+                        <option v-for="make in POPULAR_VEHICLE_MAKES" :key="make" :value="make">
+                          {{ make }}
+                        </option>
+                      </select>
+                      <select
+                        v-model="vehicleModel"
+                        aria-label="Vehicle Model"
+                        :disabled="loadingModels"
+                        style="flex: 1.4; min-height: 38px"
+                      >
+                        <option v-for="mod in vehicleModels" :key="mod" :value="mod">
+                          {{ mod }}
+                        </option>
+                      </select>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-light"
+                        style="min-height: 38px"
+                        @click="applyVehicleToBio"
+                      >
+                        Insert Build
+                      </button>
+                    </div>
+                  </div>
                   <input id="reg-bio" v-model="form.bio" name="bio" type="text" aria-describedby="reg-bio-hint" placeholder="Weekend cruises and a well-loved Civic" />
                 </div>
               </div>

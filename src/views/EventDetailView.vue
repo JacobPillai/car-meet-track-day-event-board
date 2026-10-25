@@ -5,6 +5,7 @@ import { api } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 import { useOfflineEvents } from '../composables/useOfflineEvents'
 import { useToast } from '../composables/useToast'
+import { fetchCircuitWeather } from '../services/externalApis'
 import EventMap from '../components/EventMap.vue'
 
 const route = useRoute()
@@ -26,6 +27,8 @@ const pending = ref({})
 const newCommentBody = ref('')
 const newCommentRating = ref(5)
 const includeRating = ref(false)
+const weatherTelemetry = ref(null)
+const weatherLoading = ref(false)
 let loadVersion = 0
 let commentsVersion = 0
 let pageVersion = 0
@@ -112,7 +115,20 @@ async function loadEventDetails(reset = true) {
     if (version === loadVersion) loading.value = false
   }
   if (version === loadVersion && event.value && !offlineSnapshot.value && !actionError.value) {
+    loadWeatherTelemetry(event.value)
     await loadComments(id, version)
+  } else if (version === loadVersion && event.value) {
+    loadWeatherTelemetry(event.value)
+  }
+}
+
+async function loadWeatherTelemetry(ev = event.value) {
+  if (!ev || ev.latitude == null || ev.longitude == null) return
+  weatherLoading.value = true
+  try {
+    weatherTelemetry.value = await fetchCircuitWeather(ev.latitude, ev.longitude, ev.region)
+  } finally {
+    weatherLoading.value = false
   }
 }
 
@@ -324,6 +340,59 @@ onBeforeUnmount(() => {
               </div>
             </section>
 
+            <section class="detail-section" aria-labelledby="circuit-weather">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                <p class="detail-eyebrow mb-0">
+                  Live Track Telemetry <span aria-hidden="true">/</span> Open-Meteo REST API
+                </p>
+                <button
+                  type="button"
+                  class="detail-button py-1 px-2"
+                  :disabled="weatherLoading"
+                  @click="loadWeatherTelemetry()"
+                >
+                  <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                  <span>{{ weatherLoading ? 'Polling API…' : 'Refresh Telemetry' }}</span>
+                </button>
+              </div>
+              <h2 id="circuit-weather">Circuit weather &amp; surface grip.</h2>
+
+              <div v-if="weatherTelemetry" class="detail-telemetry-box">
+                <div class="detail-telemetry-header">
+                  <div>
+                    <i class="bi me-2 text-warning" :class="weatherTelemetry.icon" aria-hidden="true"></i>
+                    <strong>{{ weatherTelemetry.condition }}</strong>
+                    <span class="ms-2 detail-status">{{ weatherTelemetry.surface }}</span>
+                  </div>
+                  <span class="detail-small font-monospace">{{ weatherTelemetry.source }}</span>
+                </div>
+
+                <div class="detail-telemetry-grid">
+                  <div>
+                    <span>Ambient Air</span>
+                    <strong>{{ weatherTelemetry.ambientTempC }}°C</strong>
+                  </div>
+                  <div>
+                    <span>Est. Track Asphalt</span>
+                    <strong>{{ weatherTelemetry.trackTempC }}°C</strong>
+                  </div>
+                  <div>
+                    <span>Rain Probability</span>
+                    <strong>{{ weatherTelemetry.rainProbPercent }}%</strong>
+                  </div>
+                  <div>
+                    <span>Wind / Humidity</span>
+                    <strong>{{ weatherTelemetry.windSpeedKmh }} km/h · {{ weatherTelemetry.humidity }}%</strong>
+                  </div>
+                </div>
+
+                <p class="detail-telemetry-tire mb-0">
+                  <i class="bi bi-disc-fill me-2" aria-hidden="true"></i>
+                  <strong>Tire &amp; Setup Recommendation:</strong> {{ weatherTelemetry.tireAdvice }}
+                </p>
+              </div>
+            </section>
+
             <section class="detail-section" aria-labelledby="venue-map">
               <h2 id="venue-map">Find the venue.</h2>
               <p class="detail-small">{{ event.venue }} · {{ event.region }}</p>
@@ -442,6 +511,16 @@ onBeforeUnmount(() => {
 .detail-contact { margin: 0; }
 .detail-contact > div { margin-top: 1.25rem; }
 .detail-contact dd { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0; line-height: 1.8; }
+.detail-telemetry-box { padding: 1.25rem; background: var(--scene-surface); border: 1px solid var(--scene-border); border-left: 3px solid var(--scene-accent); }
+.detail-telemetry-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--scene-border); }
+.detail-telemetry-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--scene-border); font-family: 'JetBrains Mono', monospace; }
+.detail-telemetry-grid > div { display: flex; flex-direction: column; gap: 0.25rem; }
+.detail-telemetry-grid span { font-size: 0.72rem; color: var(--scene-muted); text-transform: uppercase; }
+.detail-telemetry-grid strong { font-size: 1.15rem; color: var(--scene-text); }
+.detail-telemetry-tire { padding-top: 0.9rem; font-size: 0.85rem; color: var(--scene-text); }
+@media (max-width: 767.98px) {
+  .detail-telemetry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .detail-member-gate p { color: var(--scene-muted); line-height: 1.8; }
 .detail-comment-form { margin: 1.5rem 0 2rem; }
 .detail-comment-form > label { display: block; font-size: 0.85rem; margin-bottom: 0.75rem; }

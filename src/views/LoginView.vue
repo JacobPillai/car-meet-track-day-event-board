@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useToast } from '../composables/useToast'
+import OAuthSocialPanel from '../components/OAuthSocialPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -57,6 +58,11 @@ async function handleSubmit() {
     if (!disposed) pending.value = false
   }
 }
+function handleOAuthSuccess() {
+  if (disposed) return
+  completed.value = true
+  router.push(String(route.query.redirect || authStore.roleHomeRoute))
+}
 </script>
 
 <template>
@@ -85,6 +91,8 @@ async function handleSubmit() {
             <p>Enter your email and password. New here? There’s room for you too.</p>
           </div>
           <p v-if="route.query.notice === 'auth_required'" class="auth-notice" role="status">Please sign in to continue to the page you requested. Account-role restrictions still apply.</p>
+
+          <OAuthSocialPanel mode="login" :disabled="busy" @authenticated="handleOAuthSuccess" />
 
           <form :aria-busy="busy" @submit.prevent="handleSubmit">
             <div v-if="submissionError" ref="errorSummary" class="auth-error-summary" role="alert" tabindex="-1">{{ submissionError }}</div>
