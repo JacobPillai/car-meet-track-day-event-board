@@ -6,6 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { api, getStoredToken, setStoredToken } from '../services/api'
+import { sendWelcomeEmail } from '../services/emailService'
 
 const USER_STORAGE_KEY = 'apexgrid_auth_user'
 
@@ -83,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = res.user
       setStoredToken(res.token)
       savePersistedUser(res.user)
+      sendWelcomeEmail(res.user) // fire and forget: never blocks sign-up
       return res.user
     } catch (err) {
       error.value = err.message || 'Registration failed.'

@@ -66,3 +66,20 @@ Loaded at 375, 768 and 1366 px (public pages plus logged-in admin, dashboard, ev
 ## 6. Tests
 
 `npm test` runs 297 tests (including 4 for the strict API client).
+
+## 7. Email services (EmailJS and testmail.app)
+
+| Value | Where it goes | Safe in browser? |
+|---|---|---|
+| EmailJS **Service ID**, **Template ID**, **Public Key** | `.env.local` as `VITE_EMAILJS_SERVICE_ID`, `VITE_EMAILJS_TEMPLATE_ID`, `VITE_EMAILJS_PUBLIC_KEY` | Yes, built to be public. In EmailJS Security settings, limit allowed domains to your site. |
+| EmailJS **Private Key** | Nowhere in this app. Not needed. | **No.** Any `VITE_` variable lands in the public bundle. |
+| testmail **API key** + **namespace** | `.env.test` (git-ignored) as `TESTMAIL_API_KEY`, `TESTMAIL_NAMESPACE`, or your shell | **No.** Used only by `scripts/check-testmail.mjs`. |
+| Your email address | Nowhere. Users type their own at sign-up. | n/a |
+
+Files: `src/services/emailService.js` (sends a welcome email after sign-up, never blocks it, does nothing when unset), `.env.example`, `.env.test.example`, `scripts/check-testmail.mjs`.
+The `.env.local` file is read at build time, so for Mercury put the same three values in `.env.local` **before** `npm run build`.
+
+EmailJS template (Email Templates, set "To Email" to `{{to_email}}`): Subject `{{subject}}`, body `Hi {{to_name}},` then `{{message}}`.
+
+Test flow: register with `myzm3.signup1@inbox.testmail.app` (namespace `myzm3`, tag `signup1`), then
+`node scripts/check-testmail.mjs signup1`. The free EmailJS plan is 200 emails a month.

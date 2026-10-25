@@ -33,3 +33,6 @@ dist-ssr/
 
 # Private API settings
 api/config.local.php
+.env.test
+.env.local
+!.env.test.example
