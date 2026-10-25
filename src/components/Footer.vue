@@ -139,6 +139,8 @@ function handleExportDbSnapshot() {
         </div>
       </section>
 
+      <div class="footer-wordmark" aria-hidden="true">APEX<span>GRID</span></div>
+
       <div class="footer-bottom">
         <p>COS30043 · Interface Design &amp; Development</p>
         <p>Made by Jacob, Syed, Naveed &amp; Gibson</p>
@@ -153,7 +155,7 @@ function handleExportDbSnapshot() {
   --footer-text: #f4f1eb;
   --footer-muted: #b6b2aa;
   --footer-line: #363530;
-  --footer-accent: #ef755e;
+  --footer-accent: #ff5a1f;
   margin-top: 4rem;
   padding: 3.5rem 0 1.25rem;
   background: var(--footer-bg);
@@ -165,7 +167,7 @@ function handleExportDbSnapshot() {
   --footer-text: #25241f;
   --footer-muted: #615d54;
   --footer-line: #cec8bc;
-  --footer-accent: #a83b27;
+  --footer-accent: #c2410c;
 }
 .footer-main { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 3.5rem; padding-bottom: 2.5rem; }
 .footer-intro { max-width: 26rem; }
@@ -174,21 +176,24 @@ function handleExportDbSnapshot() {
 .footer-mark span { width: 6px; height: 17px; background: currentColor; }
 .footer-mark span:nth-child(2) { height: 24px; }
 .footer-mark span:last-child { height: 12px; color: var(--footer-accent); }
-.footer-tagline { font-family: 'Space Grotesk', sans-serif; font-size: 1.35rem; margin: 1rem 0 .6rem; }
+.footer-tagline { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; text-transform: uppercase; letter-spacing: -.04em; font-size: 1.25rem; margin: 1rem 0 .6rem; }
 .footer-description, .footer-access-note, .footer-credits p { color: var(--footer-muted); line-height: 1.7; font-size: .875rem; }
 .footer-description { margin-bottom: 1.25rem; }
 .footer-offline { display: flex; align-items: center; gap: .6rem; color: var(--footer-muted); font-size: .8rem; }
-.footer-install { margin-top: 1rem; min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--footer-line); border-radius: 999px; background: transparent; color: var(--footer-text); font-size: .85rem; display: inline-flex; gap: .6rem; align-items: center; }
+.footer-install { margin-top: 1rem; min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--footer-line); border-radius: 0; background: transparent; color: var(--footer-text); font: 700 .75rem 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; display: inline-flex; gap: .6rem; align-items: center; }
 .footer-install:disabled { opacity: .65; cursor: wait; }
 .footer-error { color: var(--footer-accent); font-size: .85rem; margin: .75rem 0 0; }
-.footer-links h2 { font: 600 .85rem 'Inter', sans-serif; margin: .85rem 0 1rem; }
+.footer-links h2 { display: flex; align-items: center; gap: .6rem; font: 600 .7rem 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; margin: .85rem 0 1rem; }
+.footer-links h2::before { content: ''; flex: none; width: 6px; height: 6px; background: var(--footer-accent); }
 .footer-links ul { padding: 0; margin: 0; list-style: none; }
 .footer-links a { color: var(--footer-muted); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; font-size: .875rem; }
 .footer-links a:hover, .footer-brand:hover, .footer-text-button:hover { color: var(--footer-accent); }
 .footer-access-note { font-size: .75rem; max-width: 24ch; margin: .75rem 0 0; }
 .footer-resources { border-top: 1px solid var(--footer-line); border-bottom: 1px solid var(--footer-line); display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .65rem 0; }
 .footer-text-button { min-height: 44px; border: 0; padding: .5rem 0; background: transparent; color: var(--footer-text); font-size: .8rem; display: inline-flex; align-items: center; gap: .75rem; text-align: left; }
-.footer-demo-tools { display: flex; align-items: center; gap: 1.25rem; }
+.footer-demo-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1.25rem; min-width: 0; }
+.footer-wordmark { margin: 2rem 0 .5rem; overflow: hidden; color: var(--footer-text); font: 700 clamp(2.4rem, 17vw, 14rem)/.85 'JetBrains Mono', ui-monospace, monospace; letter-spacing: -.07em; text-align: center; white-space: nowrap; user-select: none; }
+.footer-wordmark span { color: var(--footer-accent); }
 .footer-demo-tools > span { color: var(--footer-muted); font-size: .75rem; }
 .footer-reset { color: var(--footer-muted); text-decoration: underline; text-underline-offset: 4px; }
 .footer-credits { padding: 1.5rem 0; border-bottom: 1px solid var(--footer-line); }
@@ -211,7 +216,8 @@ function handleExportDbSnapshot() {
   .footer-intro { grid-column: 1 / -1; }
   .footer-links h2 { line-height: 1.5; }
   .footer-resources { align-items: flex-start; flex-direction: column; gap: 0; }
-  .footer-demo-tools { justify-content: space-between; width: 100%; gap: .75rem; }
+  .footer-demo-tools { flex-direction: column; align-items: flex-start; width: 100%; gap: 0; }
+  .footer-engine-pill { display: block; padding: .5rem 0; line-height: 1.5; overflow-wrap: anywhere; }
   .footer-bottom { flex-direction: column; }
 }
 </style>
