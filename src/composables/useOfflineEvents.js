@@ -34,8 +34,14 @@ function persistOfflineEvents() {
 }
 
 export function useOfflineEvents() {
-  const updateOnlineStatus = () => {
-    browserOnline.value = navigator.onLine
+  const updateOnlineStatus = (event) => {
+    if (event?.type === 'offline') {
+      browserOnline.value = false
+    } else if (event?.type === 'online') {
+      browserOnline.value = true
+    } else {
+      browserOnline.value = navigator.onLine
+    }
   }
 
   const handleBeforeInstallPrompt = (e) => {

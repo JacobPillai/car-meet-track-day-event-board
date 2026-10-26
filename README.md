@@ -50,7 +50,12 @@ npm run test
 
 # 4. Build static production bundle + PWA Service Worker for Swinburne Mercury
 npm run build
+
+# 5. Preview the production PWA + Service Worker locally (http://127.0.0.1:4173/)
+npx vite preview --port 4173 --host 127.0.0.1
 ```
+
+> **PWA & D/HD Interview Guide:** See **[`docs/PWA_AND_DHD_INTERVIEW_GUIDE.md`](docs/PWA_AND_DHD_INTERVIEW_GUIDE.md)** for the full walkthrough of the PWA Service Worker, Offline Saved Events Vault, D/HD Interest Registration text (`docs/ApexGrid_DHD_Interest_Registration.docx`), and live demonstration script.
 
 ---
 
@@ -95,12 +100,12 @@ Password for all seeded accounts: **`Password123!`**
 
 Each team member owns a distinct core layer and a **Vue-integrated advanced feature** not taught in standard lectures:
 
-| Member | Role | Advanced Feature | Files to Demonstrate in Week 12 Interview |
+| Member | Role | Interview Content & Advanced Features | Files to Demonstrate in Interview |
 | :--- | :--- | :--- | :--- |
-| **Jacob (You)** | Full-Stack Lead | **PWA & Offline Event Vault** (`vite-plugin-pwa`, Web Manifest, Workbox Service Worker caching OSM tiles & static assets, reactive `navigator.onLine` telemetry banner, and offline event pinning) + **API & Social Wiring** | `vite.config.js`, `src/composables/useOfflineEvents.js`, `src/views/MyEventsView.vue`, `src/views/EventDetailView.vue`, `src/services/api.js` |
-| **Syed** | Backend & State Lead | **Pinia Global State (Persisted) + JWT & Role-Based Vue Router Guards** (`authStore`, `eventStore`, `router.beforeEach` role enforcement, Guest vs Member field masking, and PHP 5.4+ HMAC-SHA256 JWT API) | `src/stores/authStore.js`, `src/stores/eventStore.js`, `src/router/index.js`, `api/jwt.php`, `api/index.php`, `database/schema.sql` |
-| **Naveed** | Frontend & Geospatial | **Interactive Leaflet Map + FullCalendar Schedule** (Custom category `L.divIcon` markers, Australia & Malaysia region quick-jump flyTo controls, click-to-pick coordinates in `EventFormView`, Haversine distance sorting, and FullCalendar Month/List views) | `src/views/ExploreView.vue`, `src/components/EventMap.vue`, `src/components/EventCalendar.vue`, `src/components/Navbar.vue` |
-| **Gibson** | QA & Analytics Lead | **Organizer Analytics Dashboard (`vue-chartjs` + `chart.js`)** (Cumulative RSVPs Line Chart, Going vs Interested & Likes Bar Chart, Discipline Doughnut Chart) + **Vitest & Vue Test Utils Suite** | `src/views/OrganizerDashboardView.vue`, `tests/unit/EventCard.spec.js`, `tests/unit/PaginationBar.spec.js`, `tests/unit/authStore.spec.js` |
+| **Jacob (You)** | Full-Stack Lead | • **Vite PWA & Workbox runtime** (`vite-plugin-pwa`, Web Manifest, Service Worker caching OSM tiles & Google Fonts)<br>• **Offline saved events** (`useOfflineEvents.js`, Offline Vault tab, live `navigator.onLine` status)<br>• **Dual-mode REST API client** (`api.js` + `localDb.js` with automatic PHP/MySQL vs localStorage routing)<br>• **Design decision** (finalized and discussed with everyone — both initial F1 Telemetry HUD and Community-First Automotive Editorial UI)<br>• **Setup basics files for database MySQL configuration** (`api/config.php`, `api/config.local.example.php`, PDO connection helpers)<br>• **API and Namespace Keys for service** (`.env.local`, `.env.test`, EmailJS & testmail.app integration in `emailService.js`)<br>• **Images for the app** (`public/meet-hero.jpg`, SVG icons, curated Unsplash automotive photography across `seedData.js`) | `vite.config.js`, `src/composables/useOfflineEvents.js`, `src/services/api.js`, `src/services/emailService.js`, `api/config.php`, `DESIGN_BRIEF.md`, `CREDITS.md` |
+| **Syed** | Backend & State Lead | • **PHP 5.4+ PDO REST API & 23 Endpoints** (`api/index.php` zero-mod_rewrite query dispatcher)<br>• **MySQL / MariaDB 5.5 8-Table Relational Schema** (`database/schema.sql` & `seed.sql` with `VARCHAR(191)` 767-byte index compatibility)<br>• **Pure-PHP HMAC-SHA256 JWT Authentication & Bcrypt Security** (`api/jwt.php`, constant-time signature check, database role re-verification, `login_attempts` brute-force rate limiting)<br>• **Pinia Persisted Global State Stores** (`authStore.js`, `eventStore.js`, `themeStore.js`)<br>• **Vue Router Role-Based Navigation Guards** (`router.beforeEach` enforcing `requiresAuth`, `guestOnly`, and role hierarchy + server-side Guest vs Member address/contact masking) | `src/stores/authStore.js`, `src/stores/eventStore.js`, `src/router/index.js`, `api/jwt.php`, `api/index.php`, `database/schema.sql` |
+| **Naveed** | Frontend & Geospatial | • **Interactive Leaflet.js 1.9 Map Engine** (`EventMap.vue` with OpenStreetMap raster tiles and custom discipline-colored HTML/SVG `L.divIcon` markers solving Vite asset bundling issues)<br>• **Cross-Border APAC Regional Switcher** (Quick-jump `map.flyTo()` controls for `All`, `Australia / VIC`, `Malaysia / Sepang & Sarawak`, `Kuching`, and `Sepang` with reduced-motion support)<br>• **Interactive Map Coordinate Picker & Nominatim Geocoding** (`@pick-coordinates` click-to-pick in `EventFormView.vue` paired with OpenStreetMap Nominatim forward/reverse geocoding in `externalApis.js`)<br>• **FullCalendar v6 Schedule Explorer** (`EventCalendar.vue` toggling between `dayGridMonth` Month Grid and `listMonth` Chronological Track Schedule with direct event routing)<br>• **Haversine Great-Circle GPS Distance Calculator** (Client & API distance sorting in km from user browser Geolocation or Melbourne/Sepang hubs) | `src/views/ExploreView.vue`, `src/components/EventMap.vue`, `src/components/EventCalendar.vue`, `src/views/EventFormView.vue`, `src/services/externalApis.js` |
+| **Gibson** | QA & Analytics Lead | • **Organizer Analytics Dashboard (`vue-chartjs` + `Chart.js 4`)** (`OrganizerDashboardView.vue` connected to `GET /dashboard/stats`)<br>• **3 Reactive Telemetry Visualizations:** (1) Cumulative RSVPs Over Time Line Chart, (2) Going vs Interested & Likes Grouped Bar Chart, and (3) Event Discipline Distribution Doughnut Chart<br>• **KPI Summary & Capacity Utilization Tracking** (Live attendance progress bars, capacity thresholds, and organizer event management table)<br>• **Comprehensive Vitest & Vue Test Utils Automated QA Suite** (297 passing unit & component tests across 17 spec files covering stores, API client, offline vault, map, calendar, navbar, forms, and views)<br>• **WCAG 2.1 AA Accessibility & Usability Verification** (Post-interaction `:user-invalid`/`:user-valid` form validation, `aria-describedby`/`aria-invalid` bindings, keyboard roving tabindex, and `prefers-reduced-motion` compliance) | `src/views/OrganizerDashboardView.vue`, `tests/unit/AboutView.spec.js`, `tests/unit/EventCard.spec.js`, `tests/unit/Navbar.spec.js`, `tests/unit/authStore.spec.js`, `tests/unit/api.spec.js` |
 
 ---
 
@@ -179,6 +184,15 @@ This section documents real issues encountered during development and testing, t
 - **Symptom:** Standard Leaflet `L.marker()` default PNG icons often break after `vite build` when deployed to a subdirectory like Mercury because Vite rewrites asset paths.
 - **Resolution:**
   - Built custom `L.divIcon` HTML/CSS circular badges in `src/components/EventMap.vue` color-coded by motorsport discipline (`Track Day`, `Drift`, `Meet`, `Drag`, `Cruise`, `Show`) and tagged with `AU`/`MY`, ensuring 100% reliable rendering online and offline.
+
+### Issue #7: Installed PWA Serving Cached Bundles After Source Edits & Offline Event Emulation
+- **Symptom:** After updating team member attributions in `src/views/AboutView.vue`, opening the installed PWA or a localhost port with a previously registered Service Worker continued rendering the older cached `AboutView.vue` bundle. Additionally, synthetic `window.dispatchEvent(new Event('offline'))` checks did not flip `isOnline` when `navigator.onLine` remained `true`.
+- **Root Cause:**
+  1. Workbox's navigation route (`createHandlerBoundToURL("index.html")`) serves the precached `dist/index.html` and hashed JS bundle first while checking for updates in the background, and any lingering Service Worker on `localhost:5173` intercepted `npm run dev` requests.
+  2. `updateOnlineStatus()` in `useOfflineEvents.js` previously read `navigator.onLine` without inspecting the dispatched `Event.type`.
+- **Resolution:**
+  - Updated `src/main.js` to automatically unregister stale Service Workers when `import.meta.env.DEV` is true, and added a `controllerchange` listener + `reg.update()` check in production builds so updated bundles reload automatically once the new Service Worker activates.
+  - Updated `updateOnlineStatus(event)` in `src/composables/useOfflineEvents.js` to handle `event?.type === 'offline'` and `event?.type === 'online'` alongside `navigator.onLine`.
 
 ---
 

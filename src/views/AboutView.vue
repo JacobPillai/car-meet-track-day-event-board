@@ -24,27 +24,56 @@ function onTabKeydown(event, index) {
 const team = [
   {
     name: 'Jacob Pillai', area: 'Lead full-stack', role: 'PWA & Social API Lead',
-    description: 'PWA service worker and offline venue caching, RSVP and likes, comment ratings, and the earlier “F1 Telemetry HUD” interface design.',
-    features: ['Vite PWA & Workbox runtime', 'Offline saved events', 'Dual-mode REST API client'],
-    file: 'useOfflineEvents.js'
+    description: 'PWA service worker and offline venue caching, RSVP and likes, comment ratings, earlier “F1 Telemetry HUD” interface design, community-first design decisions finalized and discussed with everyone, base MySQL database configuration, EmailJS and testmail API/namespace keys, and app imagery.',
+    features: [
+      'Vite PWA & Workbox runtime',
+      'Offline saved events',
+      'Dual-mode REST API client',
+      'Design decision (finalized and discussed with everyone)',
+      'Setup basics files for database MySQL configuration',
+      'API and Namespace Keys for service',
+      'Images for the app'
+    ],
+    file: 'useOfflineEvents.js / api.js / config.php'
   },
   {
     name: 'Syed Rahman', area: 'Backend & state', role: 'Auth, DB & Pinia Lead',
-    description: 'Seven-table MySQL schema targeting Mercury MariaDB 5.5, PHP 5.4+ REST endpoints, pure-PHP HMAC-SHA256 JWT authentication, and persisted Pinia stores.',
-    features: ['PHP 5.4+ PDO REST API', 'Pinia auth & event stores', 'Vue Router role-based guards'],
-    file: 'authStore.js / jwt.php'
+    description: 'Seven-table MySQL schema targeting Mercury MariaDB 5.5, PHP 5.4+ REST endpoints, pure-PHP HMAC-SHA256 JWT authentication, persisted Pinia stores, role-based Vue Router guards, and server-side security hardening.',
+    features: [
+      'PHP 5.4+ PDO REST API & 23 endpoints',
+      'MySQL / MariaDB 5.5 7-table schema & seed data',
+      'Pure-PHP HMAC-SHA256 JWT authentication & bcrypt hashing',
+      'Pinia auth, event & theme stores with localStorage persistence',
+      'Vue Router role-based guards (Guest / Member / Organizer / Admin)',
+      'Login rate-limiting & role-isolated field masking'
+    ],
+    file: 'authStore.js / jwt.php / schema.sql'
   },
   {
     name: 'Naveed Khan', area: 'Frontend & geo', role: 'Map & Calendar Lead',
-    description: 'Leaflet.js venue map with OpenStreetMap tiles, FullCalendar schedule grid and list views, and Haversine distance calculation.',
-    features: ['Leaflet category pins', 'FullCalendar v6 month/list', 'Australia & Malaysia region controls'],
-    file: 'EventMap.vue / ExploreView.vue'
+    description: 'Leaflet.js venue map with OpenStreetMap tiles, custom discipline-colored SVG/HTML pins, FullCalendar v6 schedule grid and list views, Haversine GPS distance calculation, and Nominatim address geocoding.',
+    features: [
+      'Leaflet.js interactive map & custom L.divIcon category pins',
+      'FullCalendar v6 Month Grid (dayGridMonth) & List (listMonth) views',
+      'Australia (VIC) & Malaysia (Sepang / Kuching) region flyTo controls',
+      'Haversine great-circle GPS distance sorting & geolocation',
+      'Click-to-pick map coordinate selector & Nominatim reverse geocoding',
+      'Synchronized Map + Calendar + Preview split-workspace on /explore'
+    ],
+    file: 'EventMap.vue / ExploreView.vue / EventCalendar.vue'
   },
   {
     name: 'Gibson Tan', area: 'QA & analytics', role: 'Analytics & Testing Lead',
-    description: 'Organizer analytics with three Chart.js reactive visualisations and the Vitest automated component test suite.',
-    features: ['Chart.js / vue-chartjs charts', 'Vitest unit tests', 'RSVP capacity utilisation'],
-    file: 'OrganizerDashboardView.vue'
+    description: 'Organizer analytics with three Chart.js reactive visualisations, RSVP capacity utilisation tracking, comprehensive Vitest automated component test suite (297 tests across 17 spec files), and WCAG 2.1 AA accessibility checks.',
+    features: [
+      'Chart.js / vue-chartjs cumulative RSVPs line chart',
+      'Going vs Interested & Likes grouped bar chart',
+      'Event discipline distribution doughnut chart & KPI summary cards',
+      'RSVP capacity utilisation & urgency thresholds',
+      'Vitest unit tests & Vue Test Utils suite (297 tests / 17 specs)',
+      'WCAG 2.1 AA form validation (:user-invalid), focus & reduced-motion checks'
+    ],
+    file: 'OrganizerDashboardView.vue / tests/unit/*.spec.js'
   }
 ]
 </script>

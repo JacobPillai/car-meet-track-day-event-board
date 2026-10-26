@@ -45,3 +45,22 @@ if (typeof document !== 'undefined') {
 }
 
 app.mount('#app')
+
+// Ensure PWA service worker updates cleanly in production and never serves stale builds in dev
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  if (import.meta.env.DEV) {
+    navigator.serviceWorker.getRegistrations?.().then((registrations) => {
+      registrations.forEach((reg) => reg.unregister())
+    })
+  } else {
+    let refreshing = false
+    navigator.serviceWorker.addEventListener?.('controllerchange', () => {
+      if (refreshing) return
+      refreshing = true
+      window.location.reload()
+    })
+    navigator.serviceWorker.getRegistration?.().then((reg) => {
+      reg?.update?.()
+    })
+  }
+}

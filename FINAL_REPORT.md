@@ -39,10 +39,10 @@
 
 | Student ID | Full Name | Primary Role | Core & Advanced Feature Ownership | Peer Score |
 | :--- | :--- | :--- | :--- | :---: |
-| **105986053** | **Jacob Jayen Pillai** | **Project Lead & Full-Stack Architect** | **PWA & Offline Vault** (`vite-plugin-pwa`, Service Worker caching, `useOfflineEvents.js`), Social Features (RSVPs, Likes, Ratings/Comments), "F1 Telemetry HUD" UI Redesign, Dual-Mode API Client (`api.js` + `localDb.js`), Integration Testing | **30 / 30** |
-| `[Student ID: Syed Adam]` | **Syed Adam** | **Backend & State/Auth Lead** | **Pinia Persisted State** (`authStore`, `eventStore`, `themeStore`), **JWT Authentication** (`api/jwt.php`), MySQL/MariaDB 5.5 Schema (`schema.sql`, `seed.sql`), Vue Router Role-Based Navigation Guards (`router.beforeEach`) | **25 / 30** |
-| `[Student ID: T2]` | **Naveed Khan** | **Frontend & Geospatial Lead** | **Interactive Map (Leaflet.js + OSM)** & Track Schedule Calendar (`FullCalendar` v6) on `/explore`, Haversine GPS Distance Calculator, Category SVG Pins, Responsive Layout | **10 / 30** |
-| `[Student ID: T3]` | **Gibson Tan** | **QA, Analytics & Testing Lead** | **Organizer Analytics Dashboard** (`Chart.js` / `vue-chartjs` — 3 Reactive Charts on `/dashboard`), Automated Unit Testing (`Vitest` + `@vue/test-utils`), WCAG 2.1 AA Audit & Defect Log | **10 / 30** |
+| **105986053** | **Jacob Jayen Pillai** | **Project Lead & Full-Stack Architect** | • **Vite PWA & Workbox runtime** (`vite-plugin-pwa`, Service Worker caching)<br>• **Offline saved events** (`useOfflineEvents.js`)<br>• **Dual-mode REST API client** (`api.js` + `localDb.js`)<br>• **Design decision** (finalized and discussed with everyone)<br>• **Setup basics files for database MySQL configuration** (`api/config.php`, `api/config.local.example.php`)<br>• **API and Namespace Keys for service** (EmailJS & testmail.app in `.env.local` / `emailService.js`)<br>• **Images for the app** (`public/meet-hero.jpg`, SVG icons, Unsplash curated photography) | **30 / 30** |
+| `[Student ID: Syed Adam]` | **Syed Adam** | **Backend & State/Auth Lead** | • **Pinia Persisted State** (`authStore`, `eventStore`, `themeStore`)<br>• **Pure-PHP HMAC-SHA256 JWT Authentication & Bcrypt** (`api/jwt.php`)<br>• **MySQL/MariaDB 5.5 8-Table Schema & 23 PDO Endpoints** (`schema.sql`, `seed.sql`, `api/index.php`)<br>• **Vue Router Role-Based Navigation Guards** (`router.beforeEach`, Guest vs Member masking, login throttling) | **25 / 30** |
+| `[Student ID: T2]` | **Naveed Khan** | **Frontend & Geospatial Lead** | • **Interactive Leaflet.js Map & OpenStreetMap Tiles** (`EventMap.vue`, custom `L.divIcon` discipline pins)<br>• **Cross-Border Region FlyTo Controls** (`All`, `Australia / VIC`, `Malaysia / Sepang & Sarawak`, `Kuching`, `Sepang`)<br>• **FullCalendar v6 Schedule Explorer** (`EventCalendar.vue` Month Grid `dayGridMonth` & List `listMonth` views)<br>• **Haversine Great-Circle GPS Distance Calculator & Nominatim Geocoding** (`EventFormView.vue` coordinate picker & reverse geocoding) | **10 / 30** |
+| `[Student ID: T3]` | **Gibson Tan** | **QA, Analytics & Testing Lead** | • **Organizer Analytics Dashboard** (`Chart.js` / `vue-chartjs` — Cumulative RSVPs Line Chart, Going vs Interested Bar Chart, Discipline Doughnut Chart on `/dashboard`)<br>• **RSVP Capacity Utilisation & KPI Summary Cards**<br>• **Automated Unit & Component Testing Suite** (`Vitest` + `@vue/test-utils` — 297 passing tests across 17 spec files)<br>• **WCAG 2.1 AA Accessibility Verification & Defect Log** (`:user-invalid`, `aria-describedby`, roving tabindex, `prefers-reduced-motion`) | **10 / 30** |
 
 ---
 
@@ -234,61 +234,83 @@ ApexGrid enforces security at three distinct architectural levels:
 
 ---
 
-## 4. Individual Advanced Feature Implementation
+## 4. Individual Advanced Feature Implementation (Interview Defense Guide)
 
-Each of the four group members assumed end-to-end technical ownership over an advanced, non-trivial Vue capability beyond standard lab exercises:
+Each of the four group members assumed technical ownership over core layers and advanced Vue capabilities for the project interview:
 
-### 4.1 Jacob Jayen Pillai: PWA Service Worker & Zero-Reception Offline Saved Events Vault
+### 4.1 Jacob Jayen Pillai (105986053): PWA Runtime, Offline Vault, Dual-Mode API, Design Direction, DB Setup, Service Keys & App Imagery
 - **Role:** Full-Stack Lead & Software Architect
-- **Technical Implementation:**
-  - Implemented `vite-plugin-pwa` with Google Workbox service worker generation (`dist/sw.js`).
-  - Configured `webmanifest` with standalone display mode, motorsport carbon theme colors (`#090b10`), and SVG app icons (`/pwa-icon.svg`).
-  - Engineered Workbox runtime caching strategies:
-    - **OpenStreetMap Tiles:** `CacheFirst` strategy caching raster tiles (`tile.openstreetmap.org`) for up to 30 days.
-    - **Google Fonts:** Cached stylesheets (`StaleWhileRevalidate`) and webfont binaries (`CacheFirst` for 1 year).
-  - Built the **Offline Saved Events Vault** (`src/composables/useOfflineEvents.js`): Allows drivers to pin any upcoming event with a single click. When pinned, the entire event data structure (including GPS coordinates, gate instructions, and schedule run-sheets) is saved into persistent storage.
-  - Implemented automatic network event listeners (`window.addEventListener('online')` / `'offline'`). When network connectivity drops, ApexGrid displays an offline telemetry badge and allows the user to browse cached events without connection drops.
-- **Key Code Deliverable:** `src/composables/useOfflineEvents.js`, `vite.config.js`, `src/views/MyEventsView.vue`.
+- **Interview Topics & Technical Implementation:**
+  1. **Vite PWA & Workbox Runtime (`vite.config.js`):**
+     - Configured `vite-plugin-pwa` with Google Workbox service worker generation (`dist/sw.js`) and `manifest.webmanifest` (standalone display, theme colors, maskable SVG icons).
+     - Engineered runtime caching strategies: `CacheFirst` for OpenStreetMap raster tiles (`tile.openstreetmap.org`, 14–30 days) and `StaleWhileRevalidate` / `CacheFirst` for Google Fonts stylesheets and webfont binaries.
+  2. **Offline Saved Events (`src/composables/useOfflineEvents.js`, `src/views/MyEventsView.vue`):**
+     - Built the reactive Offline Saved Events Vault enabling users to pin event snapshots (venue, schedule, GPS coordinates, and unlocked member address) to `localStorage` (`apexgrid_offline_saved_events_v1`) from any Event Card or Event Detail page.
+     - Added reactive `window.addEventListener('online' / 'offline')` network state tracking surfaced in `Navbar.vue`, `Footer.vue`, and `MyEventsView.vue`.
+  3. **Dual-Mode REST API Client (`src/services/api.js` + `src/services/localDb.js`):**
+     - Architected a unified HTTP/Local client that targets `api/index.php?endpoint=...` when running on Swinburne Mercury or when `VITE_USE_PHP_API=true`, and transparently falls back to the stateful `localDb.js` engine during local frontend development or offline GET requests.
+  4. **Design Decision (Finalized and Discussed with Everyone) (`DESIGN_BRIEF.md`, `src/style.css`):**
+     - Led and finalized the group's UI/UX design direction after team discussions—evolving from the initial *"F1 Telemetry HUD & Night-Run Carbon"* concept into the *"Community-First Automotive Editorial"* system (warm charcoal `#181a19`, alabaster light mode `#f4f1ea`, restrained vermilion accent `#ff5a1f`, `Space Grotesk` + `Inter` + tabular `JetBrains Mono`).
+  5. **Setup Basic Files for Database MySQL Configuration (`api/config.php`, `api/config.local.example.php`):**
+     - Created the foundational PHP 5.4+ MySQL/MariaDB PDO configuration (`get_db_connection()`), environment variable readers, `16M` memory limit enforcement for Swinburne FeeNIX, CORS origin allow-listing, and git-ignored `api/config.local.php` credential loading.
+  6. **API and Namespace Keys for Service (`src/services/emailService.js`, `.env.example`, `.env.test.example`, `scripts/check-testmail.mjs`):**
+     - Configured and wired the external service keys and namespaces, including **EmailJS** (`VITE_EMAILJS_SERVICE_ID`, `VITE_EMAILJS_TEMPLATE_ID`, `VITE_EMAILJS_PUBLIC_KEY`) for automated post-registration welcome emails and **testmail.app** (`TESTMAIL_API_KEY`, `TESTMAIL_NAMESPACE`) for end-to-end inbox verification.
+  7. **Images for the App (`public/meet-hero.jpg`, `public/pwa-icon.svg`, `src/data/seedData.js`, `CREDITS.md`):**
+     - Selected, optimized, and integrated all visual assets across the application, including the hero photography (`public/meet-hero.jpg`), custom SVG brand icons, broken-image fallback handlers, and 18 curated Unsplash automotive cover photos, club logos, and driver avatars with full license attribution in `CREDITS.md`.
+- **Key Files to Demonstrate:** `vite.config.js`, `src/composables/useOfflineEvents.js`, `src/services/api.js`, `api/config.php`, `src/services/emailService.js`, `DESIGN_BRIEF.md`, `CREDITS.md`.
 
-### 4.2 Syed Adam: Pinia Global Persisted Stores, Pure-PHP HMAC-SHA256 JWT & Route Guards
+### 4.2 Syed Adam: Pinia Global Persisted Stores, Pure-PHP HMAC-SHA256 JWT, MySQL Schema & Route Guards
 - **Role:** Backend & State/Auth Lead
-- **Technical Implementation:**
-  - Designed and deployed three central **Pinia Stores**:
-    - `authStore.js`: Tracks authenticated state, active JWT token, user profile, and role capabilities (`isGuest`, `isMember`, `isOrganizer`, `isAdmin`).
-    - `eventStore.js`: Manages global search queries, motorsport discipline filters, region hubs, price caps, and server-side pagination state.
-    - `themeStore.js`: Manages light/dark theme persistence across browser sessions.
-  - Configured `pinia-plugin-persistedstate` to ensure tokens and user sessions survive page refreshes.
-  - Developed a standalone **PHP HMAC-SHA256 JWT Engine** (`api/jwt.php`) with zero Composer dependencies:
-    - Base64URL header/payload encoding.
-    - Cryptographic HMAC-SHA256 signature verification.
-    - Token expiration validation (`exp`).
-  - Engineered client-side routing protection (`src/router/index.js`):
-    - `router.beforeEach` evaluates `requiresAuth`, `guestOnly`, and `roles`.
-    - Automatically forwards return URLs via `?redirect=...`.
-- **Key Code Deliverable:** `src/stores/authStore.js`, `src/router/index.js`, `api/jwt.php`, `database/schema.sql`.
+- **Interview Topics & Technical Implementation:**
+  1. **Three Centralized Pinia State Stores (`src/stores/`):**
+     - `authStore.js`: Manages active user session, JWT token persistence, login/register/OAuth actions, profile updates, and computed role getters (`isGuest`, `isMember`, `isOrganizer`, `isAdmin`).
+     - `eventStore.js`: Synchronizes global search keyword, motorsport discipline filter, region selector (`AU` / `MY`), date range, price cap, sort order (`date`, `popularity`, `distance`), and pagination state with `localStorage`.
+     - `themeStore.js`: Persists Dark Carbon vs. Daylight Paddock Light Mode (`data-bs-theme`) across reloads.
+  2. **Pure-PHP HMAC-SHA256 JWT & Bcrypt Authentication (`api/jwt.php`, `api/config.php`):**
+     - Engineered a zero-Composer PHP 5.4+ JWT implementation using Base64URL encoding, constant-time `hash_equals` signature verification, 24-hour token expiry (`exp`), and live database role re-verification on every authenticated request.
+     - Implemented portable bcrypt password hashing (`apex_hash_password()` / `apex_verify_password()`) with automatic legacy hash upgrading and a `login_attempts` table throttling brute-force logins (max 5 failed attempts per 15 minutes).
+  3. **MariaDB 5.5 Relational Schema & 23 REST Endpoints (`database/schema.sql`, `database/seed.sql`, `api/index.php`):**
+     - Modeled 8 normalized tables (`users`, `clubs`, `categories`, `events`, `rsvps`, `event_likes`, `comments`, `login_attempts`) using `VARCHAR(191)` unique keys to satisfy MariaDB 5.5's 767-byte index limit.
+  4. **Vue Router Role-Based Access Control (`src/router/index.js`):**
+     - Implemented global `router.beforeEach` navigation guards enforcing `meta.requiresAuth`, `meta.guestOnly`, and `meta.roles`, preserving requested return URLs (`?redirect=...`), paired with backend JSON masking of `address` and `organizer_contact` for unauthenticated guests.
+- **Key Files to Demonstrate:** `src/stores/authStore.js`, `src/stores/eventStore.js`, `src/router/index.js`, `api/jwt.php`, `api/index.php`, `database/schema.sql`.
 
-### 4.3 Naveed Khan: Interactive Leaflet Map & FullCalendar Track Schedule Explorer
+### 4.3 Naveed Khan: Interactive Leaflet Map, Custom Category Pins, FullCalendar v6 Schedule & Haversine Geolocation
 - **Role:** Frontend & Geospatial Lead
-- **Technical Implementation:**
-  - Developed `src/components/EventMap.vue` using **Leaflet.js 1.9** and OpenStreetMap tiles.
-  - Solved Vite asset bundler icon-resolution bugs by engineering custom HTML/CSS circular marker pins (`L.divIcon`) dynamically color-coded by motorsport discipline (`#e63946` for Track Day, `#f4a261` for Drift, `#2a9d8f` for Cruise).
-  - Integrated dual-region quick-jump buttons (`All`, `Australia / VIC`, `Malaysia / Sepang & Sarawak`, `Kuching`, `Sepang`) that smoothly pan and zoom (`map.flyTo()`) across APAC hubs.
-  - Built an interactive click-to-pick coordinate selector for the event creation form (`@pick-coordinates`).
-  - Integrated **FullCalendar v6** (`src/components/EventCalendar.vue`) providing seamless toggling between Month Grid view (`dayGridMonth`) and Chronological Track Schedule view (`listMonth`).
-  - Implemented client-side **Haversine Great-Circle Distance math** enabling users to sort events relative to their real-time device Geolocation or regional hub coordinates.
-- **Key Code Deliverable:** `src/components/EventMap.vue`, `src/components/EventCalendar.vue`, `src/views/ExploreView.vue`.
+- **Interview Topics & Technical Implementation (Detailed Breakdown for Interview):**
+  1. **Interactive Leaflet.js 1.9 Map Engine (`src/components/EventMap.vue`):**
+     - Built the reusable Leaflet map component rendering OpenStreetMap raster tiles with zero paid API keys.
+     - **Solved Vite Production Bundling Issue:** Default Leaflet PNG markers break when Vite hashes asset filenames. Resolved this by constructing custom HTML/CSS circular pins via `L.divIcon` dynamically styled by motorsport category (`Track Day`, `Drift`, `Meet`, `Drag`, `Cruise`, `Show`) and tagged with regional codes (`AU` / `MY`).
+     - Added reactive watchers on `props.events`, `props.selectedRegion`, and `props.pickedLat / pickedLng` so marker clusters and map viewports stay synchronized without memory leaks on component unmount (`onBeforeUnmount(() => map.remove())`).
+  2. **Cross-Border APAC Region Switcher & Reduced-Motion Support:**
+     - Implemented regional quick-jump controls (`All`, `Australia / VIC`, `Malaysia / Sepang & Sarawak`, `Kuching`, `Sepang`) that smoothly pan and zoom the map (`map.flyTo(coords, zoom)`) while automatically falling back to instant `map.setView()` when the user has `prefers-reduced-motion: reduce` enabled.
+  3. **Interactive Map Coordinate Picker & Nominatim Reverse Geocoding (`src/views/EventFormView.vue`, `src/services/externalApis.js`):**
+     - Enabled `pickable: true` mode on `EventMap.vue` so organizers hosting a new event can click anywhere on the map to emit `@pick-coordinates` (`{ lat, lng }`), which triggers `reverseGeocodeCoords()` against the OpenStreetMap Nominatim REST API to auto-fill street addresses and regions.
+  4. **FullCalendar v6 Track Schedule Explorer (`src/components/EventCalendar.vue`):**
+     - Integrated `@fullcalendar/vue3` with `dayGridMonth` (monthly calendar grid), `listMonth` (chronological run-sheet list), and `interactionPlugin`.
+     - Mapped each event's category badge color directly to calendar event pills and wired `eventClick` to navigate directly to `/events/:id`.
+  5. **Synchronized Explore Workspace & Haversine Distance Calculator (`src/views/ExploreView.vue`):**
+     - Built the 3-mode view switcher (**Split View**, **Map Only**, **Calendar Only**) on `/explore` with a synchronized photographic event preview card and quick-select list.
+     - Implemented the **Haversine Great-Circle Distance Formula** calculating exact kilometer distances between the user's browser Geolocation coordinates (or Melbourne/Sepang regional hub) and each circuit venue.
+- **Key Files to Demonstrate:** `src/views/ExploreView.vue`, `src/components/EventMap.vue`, `src/components/EventCalendar.vue`, `src/views/EventFormView.vue`, `src/services/externalApis.js`.
 
-### 4.4 Gibson Tan: Organizer Telemetry Analytics Dashboard (`Chart.js`) & Vitest QA Suite
+### 4.4 Gibson Tan: Organizer Analytics Dashboard (`Chart.js` / `vue-chartjs`), Capacity Telemetry & 297-Test Vitest QA Suite
 - **Role:** QA, Testing & Analytics Lead
-- **Technical Implementation:**
-  - Built the reactive Organizer Analytics Portal (`src/views/OrganizerDashboardView.vue`) powered by `chart.js` and `vue-chartjs`.
-  - Implemented three distinct visualization components driven by backend metrics:
-    1. **Cumulative Driver RSVPs Over Time (Line Chart):** Evaluates registration velocity leading up to event day.
-    2. **Going vs. Interested Driver Engagement (Grouped Bar Chart):** Compares confirmed attendees against watchlist interest per event.
-    3. **Event Discipline Distribution (Doughnut Chart):** Illustrates club portfolio balance across Track, Drift, Drag, Meet, Cruise, and Show.
-  - Designed the comprehensive **Vitest automated test suite** (`tests/unit/`) comprising 13 unit tests verifying component props, emits, authentication persistence, and pagination calculation.
-  - Conducted accessibility and usability audits documenting defect logs and resolutions.
-- **Key Code Deliverable:** `src/views/OrganizerDashboardView.vue`, `tests/unit/*.spec.js`.
+- **Interview Topics & Technical Implementation (Detailed Breakdown for Interview):**
+  1. **Organizer Analytics Portal (`src/views/OrganizerDashboardView.vue`):**
+     - Engineered the role-restricted (`organizer` / `admin`) analytics dashboard fetching aggregated metrics from `GET /dashboard/stats` (total hosted events, confirmed `going` RSVPs, `interested` watchlist count, total likes, and average star rating).
+  2. **Three Reactive `Chart.js 4` & `vue-chartjs` Visualizations:**
+     - **Chart 1 — Cumulative Driver RSVPs Over Time (`<Line />`):** Plots chronological RSVP registration velocity leading up to event day with filled area tension curves so organizers can track promotional momentum.
+     - **Chart 2 — Going vs. Interested & Likes per Event (`<Bar />`):** Grouped multi-dataset bar chart comparing confirmed paddock attendance (`going`) against watchlist interest (`interested`) and community likes (`♥`) across each hosted event.
+     - **Chart 3 — Event Discipline Portfolio Breakdown (`<Doughnut />`):** Visualizes the distribution of hosted events across `Track Day`, `Drift`, `Meet`, `Drag`, `Cruise`, and `Show` categories with custom legend formatting.
+  3. **Live RSVP Capacity Utilization & Host Management Table:**
+     - Built the interactive event management table in `OrganizerDashboardView.vue` displaying tabular capacity progress bars (`going_count / capacity`), percentage utilization badges, quick links to edit (`/events/:id/edit`), 1-click status cancellation, and permanent deletion with confirmation.
+  4. **Comprehensive Vitest & Vue Test Utils Suite (`tests/unit/*.spec.js` — 297 Passing Tests across 17 Spec Files):**
+     - Configured `vitest` with `jsdom` in `vite.config.js` and authored unit and component integration tests across 17 spec files (`AboutView`, `api`, `authStore`, `ClubsListView`, `emailService`, `EventCalendar`, `EventCard`, `EventDetailView`, `EventMap`, `EventsListView`, `eventStore`, `ExploreView`, `Footer`, `HomeView`, `LoginView`, `Navbar`, `PaginationBar`, `RegisterView`, `useOfflineEvents`).
+     - Verified component props/emits, router navigation guards, stale-request race conditions, scoped light/dark theme CSS compilation (`@vue/compiler-sfc`), and strict PHP API error handling.
+  5. **WCAG 2.1 AA Accessibility & Form Validation QA:**
+     - Audited and tested post-interaction CSS `:user-invalid` / `:user-valid` states, permanent requirement hints above inputs linked via `aria-describedby` and `aria-errormessage`, keyboard roving `tabindex` on tabs/modals, and `@media (prefers-reduced-motion: reduce)` support.
+- **Key Files to Demonstrate:** `src/views/OrganizerDashboardView.vue`, `tests/unit/EventCard.spec.js`, `tests/unit/AboutView.spec.js`, `tests/unit/Navbar.spec.js`, `tests/unit/api.spec.js`.
 
 ---
 

@@ -10,6 +10,9 @@ describe('emailService', () => {
   it('does nothing when EmailJS is not configured', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
+    vi.stubEnv('VITE_EMAILJS_SERVICE_ID', '')
+    vi.stubEnv('VITE_EMAILJS_TEMPLATE_ID', '')
+    vi.stubEnv('VITE_EMAILJS_PUBLIC_KEY', '')
     expect(isEmailConfigured()).toBe(false)
     await expect(sendEmail({ toEmail: 'a@b.co', subject: 's', message: 'm' })).resolves.toBe(false)
     expect(fetchMock).not.toHaveBeenCalled()
