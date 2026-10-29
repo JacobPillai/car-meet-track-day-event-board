@@ -20,6 +20,7 @@ import EventFormView from '../views/EventFormView.vue'
 import OrganizerDashboardView from '../views/OrganizerDashboardView.vue'
 import AdminPanelView from '../views/AdminPanelView.vue'
 import AboutView from '../views/AboutView.vue'
+import TrackSafetyView from '../views/TrackSafetyView.vue'
 
 export const routes = [
   {
@@ -131,6 +132,15 @@ export const routes = [
     component: AboutView,
     meta: {
       title: 'About ApexGrid & Phase 2 Scalability — COS30043',
+      access: 'public'
+    }
+  },
+  {
+    path: '/track-safety',
+    name: 'track-safety',
+    component: TrackSafetyView,
+    meta: {
+      title: 'Track Safety Intelligence — ApexGrid',
       access: 'public'
     }
   },
